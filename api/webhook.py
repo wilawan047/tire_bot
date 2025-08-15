@@ -1,6 +1,9 @@
 from flask import Flask, request, abort, jsonify, send_from_directory
 import mysql.connector
 import os
+import sys
+import config
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
 from werkzeug.utils import secure_filename
@@ -19,22 +22,32 @@ from linebot.models import (
     QuickReply, QuickReplyButton, MessageAction,
     FlexSendMessage, LocationSendMessage, StickerMessage
 )
-# 1. เปลี่ยนไปใช้ Environment Variables แทนไฟล์ config.py
-# LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-# LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
-LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
-# ตรวจสอบว่ามีค่า LINE_CHANNEL_ACCESS_TOKEN และ LINE_CHANNEL_SECRET
-if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_CHANNEL_SECRET:
-    print("Error: LINE_CHANNEL_ACCESS_TOKEN or LINE_CHANNEL_SECRET is not set.")
-    # You might want to handle this more gracefully depending on your use case
-    # For now, we'll let it raise an error if not set.
+import config
+LINE_CHANNEL_ACCESS_TOKEN = config.LINE_CHANNEL_ACCESS_TOKEN
+LINE_CHANNEL_SECRET = config.LINE_CHANNEL_SECRET
+
 app = Flask(__name__)
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 user_pages = {}
+@app.route("/api/webhook", methods=["POST"])
+def callback():
+    body = request.get_data(as_text=True)
+    signature = request.headers.get("X-Line-Signature")
+    if not signature:
+        return "Missing signature", 400
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        return "Invalid signature", 401
+    except Exception as e:
+        print("Error:", e)
+        return "Error", 500
+    return "OK", 200
+
+
 @app.route("/", methods=["GET"])
 def home():
     return "LINE Bot Webhook is running!", 200
@@ -44,10 +57,13 @@ def serve_image(filename):
     return send_from_directory("static/images", filename)
 
 def get_image_url(filename):
-    base_url = BASE_URL = os.environ.get("BASE_URL", "https://your-vercel-project.vercel.app/images/")
+    base_url = os.environ.get("BASE_URL")
+    if not base_url:
+        # Fallback to a placeholder URL in case BASE_URL is not set
+        return "https://placeholder.vercel.app/images/default-tire.jpg"
     if filename:
-        return base_url + quote(filename)
-    return BASE_URL + "default-tire.jpg"
+        return f"{base_url.rstrip('/')}/images/{quote(filename)}"
+    return f"{base_url.rstrip('/')}/images/default-tire.jpg"
 
 def build_quick_reply_buttons(buttons):
     return QuickReply(items=[
@@ -168,10 +184,11 @@ def build_service_list_flex(category_name, services):
         }
     }
 
+import mysql.connector
+
 def get_tire_model_name_by_id(model_id):
     try:
-        import config
-        conn = mysql.connector.connect(**config.DB_CONFIG)
+        conn = mysql.connector.connect(**config.DB_CONFIG) # แก้ไขตรงนี้
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT model_name FROM tire_models WHERE model_id = %s", (model_id,))
         result = cursor.fetchone()
@@ -183,7 +200,7 @@ def get_tire_model_name_by_id(model_id):
     except Exception as e:
         print(f"Error in get_tire_model_name_by_id: {e}")
         return {"model_name": "Unknown Model"}
-
+    
 def build_promotion_flex(promo):
     image_url = get_image_url(promo.get('image_url'))
     return {
@@ -246,24 +263,8 @@ def send_tires_page(reply_token, user_id):
         TextSendMessage(text="👇 เมนูเพิ่มเติม", quick_reply=build_quick_reply_buttons(nav_buttons))
     ])
 
-@app.route("/api/webhook", methods=["POST"])
-def callback():
-    body = request.get_data(as_text=True)
-    signature = request.headers.get("X-Line-Signature")
-    if not signature:
-        abort(400)
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    except Exception as e:
-        print("General exception:", e)
-        abort(500)
-    return "OK"
 
-@app.route("/api/webhook", methods=["GET"])
-def index():
-    return "LINE Webhook is working!", 200
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -483,6 +484,4 @@ def handle_sticker(event):
 
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+
