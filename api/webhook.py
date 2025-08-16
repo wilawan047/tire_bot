@@ -34,13 +34,16 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 user_pages = {}
 @app.route("/api/webhook", methods=["POST"])
 def callback():
-    body = request.get_data(as_text=True)
+    body = request.get_data(as_text=True)  # รับเป็น string
     signature = request.headers.get("X-Line-Signature")
+    print("Signature:", signature)
+   
     if not signature:
         return "Missing signature", 400
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
+        print("❌ Invalid signature")
         return "Invalid signature", 401
     except Exception as e:
         print("Error:", e)
@@ -48,7 +51,7 @@ def callback():
     return "OK", 200
 
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def home():
     return "LINE Bot Webhook is running!", 200
 
@@ -478,10 +481,6 @@ def handle_sticker(event):
             ("📞 ติดต่อร้าน", "ติดต่อร้าน")
         ])
     ))
-
-
-
-
-
-
-
+    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
