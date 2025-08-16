@@ -6,11 +6,11 @@ load_dotenv()
 
 # ข้อมูลการเชื่อมต่อฐานข้อมูล
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST'),
-    'port': os.environ.get('DB_PORT', 3307),
-    'user': os.environ.get('DB_USER'),
-    'password': os.environ.get('DB_PASSWORD', ""),
-    'database': os.environ.get('DB_DATABASE'),
+   "host": os.environ.get("MYSQL_HOST", "mysql.railway.internal"),
+    "port": int(os.environ.get("MYSQL_PORT", 3306)),
+    "user": os.environ.get("MYSQL_USER", "root"),
+    "password": os.environ.get("MYSQL_PASSWORD", "fzqPryLRlGdCOLAVZeXoxmikHelGJPBk"),
+    "database": os.environ.get("MYSQL_DATABASE", "railway")
 }
 
 # Line Bot API
