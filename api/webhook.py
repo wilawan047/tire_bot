@@ -55,9 +55,12 @@ def callback():
 def home():
     return "LINE Bot Webhook is running!", 200
 
+import os
+from flask import send_from_directory
+
 @app.route("/static/images/<path:filename>")
 def serve_image(filename):
-    return send_from_directory("static/images", filename)
+    return send_from_directory(os.path.join(app.root_path, "static/images"), filename)
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL")
