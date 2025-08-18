@@ -8,6 +8,8 @@ from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
 from werkzeug.utils import secure_filename
 from urllib.parse import quote
+from flask import send_from_directory
+from urllib.parse import quote
 import re
 from db_queries import (
     get_active_promotions,
@@ -58,22 +60,19 @@ def home():
 import os
 from flask import send_from_directory
 
-@app.route("/static/images2/<path:filename>")
+@app.route("/assets/images2/<path:filename>")
 def serve_image(filename):
-    return send_from_directory(os.path.join(app.root_path, "static/images2"), filename)
+    return send_from_directory(os.path.join(app.root_path, "assets/images2"), filename)
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL")
     if not base_url:
-        # Fallback to a placeholder URL in case BASE_URL is not set
         return "https://placeholder.vercel.app/images/default-tire.jpg"
     if filename:
-        image_url = f"{base_url.rstrip('/')}/static/images2/{quote(filename)}"
-        print("URL ที่ถูกสร้าง:", image_url) # เพิ่มบรรทัดนี้
+        image_url = f"{base_url.rstrip('/')}/assets/images2/{quote(filename)}"
+        print("URL ที่ถูกสร้าง:", image_url)
         return image_url
-    image_url = f"{base_url.rstrip('/')}/static/images2/default-tire.jpg"
-    print("URL ที่ถูกสร้าง:", image_url) # หรือเพิ่มตรงนี้ถ้าใช้ภาพ default
-    return image_url
+    return f"{base_url.rstrip('/')}/assets/images2/default-tire.jpg"
 
 def build_quick_reply_buttons(buttons):
     return QuickReply(items=[
