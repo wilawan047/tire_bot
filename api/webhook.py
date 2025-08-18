@@ -58,9 +58,9 @@ def home():
 import os
 from flask import send_from_directory
 
-@app.route("/static/images/<path:filename>")
+@app.route("/static/images2/<path:filename>")
 def serve_image(filename):
-    return send_from_directory(os.path.join(app.root_path, "static/images"), filename)
+    return send_from_directory(os.path.join(app.root_path, "static/images2"), filename)
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL")
@@ -68,10 +68,10 @@ def get_image_url(filename):
         # Fallback to a placeholder URL in case BASE_URL is not set
         return "https://placeholder.vercel.app/images/default-tire.jpg"
     if filename:
-        image_url = f"{base_url.rstrip('/')}/static/images/{quote(filename)}"
+        image_url = f"{base_url.rstrip('/')}/static/images2/{quote(filename)}"
         print("URL ที่ถูกสร้าง:", image_url) # เพิ่มบรรทัดนี้
         return image_url
-    image_url = f"{base_url.rstrip('/')}/static/images/default-tire.jpg"
+    image_url = f"{base_url.rstrip('/')}/static/images2/default-tire.jpg"
     print("URL ที่ถูกสร้าง:", image_url) # หรือเพิ่มตรงนี้ถ้าใช้ภาพ default
     return image_url
 
