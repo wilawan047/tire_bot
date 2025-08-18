@@ -55,7 +55,7 @@ def callback():
 def home():
     return "LINE Bot Webhook is running!", 200
 
-@app.route("/images/<path:filename>")
+@app.route("/static/images/<path:filename>")
 def serve_image(filename):
     return send_from_directory("static/images", filename)
 
