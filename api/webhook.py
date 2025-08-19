@@ -60,19 +60,16 @@ def home():
 import os
 from flask import send_from_directory
 
-@app.route("/assets/images2/<path:filename>")
-def serve_image(filename):
-    return send_from_directory(os.path.join(app.root_path, "assets/images2"), filename)
 
 def get_image_url(filename):
-    base_url = os.environ.get("BASE_URL")
+    base_url = os.environ.get("BASE_URL", "").rstrip("/")
     if not base_url:
         return "https://placeholder.vercel.app/images/default-tire.jpg"
     if filename:
-        image_url = f"{base_url.rstrip('/')}/assets/images2/{quote(filename)}"
-        print("URL ที่ถูกสร้าง:", image_url)
-        return image_url
-    return f"{base_url.rstrip('/')}/assets/images2/default-tire.jpg"
+        url = f"{base_url}/static/images2/{quote(filename)}"
+        print("URL ที่ถูกสร้าง:", url)
+        return url
+    return f"{base_url}/static/images2/default-tire.jpg"
 
 def build_quick_reply_buttons(buttons):
     return QuickReply(items=[
