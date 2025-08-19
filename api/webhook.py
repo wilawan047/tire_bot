@@ -57,12 +57,22 @@ def callback():
     return "OK", 200
 
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    return "LINE Bot Webhook is running!", 200
+
 
 import os
 from flask import send_from_directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGE_DIR = os.path.join(BASE_DIR, 'static', 'images2')
+
+# Route สำหรับ serve static images (เพื่อให้ LINE Flex หรือ browser เข้าถึงได้)
+@app.route('/static/images2/<path:filename>')
+def custom_static(filename):
+    print("Serving:", os.path.join(IMAGE_DIR, filename))
+    return send_from_directory(IMAGE_DIR, filename)
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    return "LINE Bot Webhook is running!", 200
 
 
 # ฟังก์ชันตรวจสอบว่าไฟล์มีจริงใน static/images2
@@ -94,10 +104,6 @@ def get_image_url(filename):
     print("URL ที่ถูกสร้าง:", url)
     return url
 
-# Route สำหรับ serve static images (เพื่อให้ LINE Flex หรือ browser เข้าถึงได้)
-@app.route("/static/images2/<filename>")
-def serve_image(filename):
-    return send_from_directory("static/images2", filename)
 
 
 
