@@ -68,6 +68,8 @@ from flask import send_from_directory
 
 
 def get_image_url(filename):
+    # ฟังก์ชันนี้ใช้ได้หากคุณต้องการสร้าง URL จากชื่อไฟล์
+    # แต่ถ้าฐานข้อมูลคุณมี URL เต็มอยู่แล้ว ก็ไม่จำเป็นต้องใช้
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
     if not base_url:
         return "https://placeholder.vercel.app/images/default-tire.jpg"
@@ -77,6 +79,7 @@ def get_image_url(filename):
         return url
     return f"{base_url}/static/images2/default-tire.jpg"
 
+
 def build_quick_reply_buttons(buttons):
     return QuickReply(items=[
         QuickReplyButton(action=MessageAction(label=label, text=text))
@@ -84,7 +87,7 @@ def build_quick_reply_buttons(buttons):
     ])
 
 def build_tire_flex(tire, model_name):
-    image_url = get_image_url(tire.get("tire_image_url"))
+    image_url = tire.get("tire_image_url")
     return {
         "type": "bubble",
         "hero": {
