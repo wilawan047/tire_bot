@@ -30,9 +30,7 @@ LINE_CHANNEL_ACCESS_TOKEN = config.LINE_CHANNEL_ACCESS_TOKEN
 LINE_CHANNEL_SECRET = config.LINE_CHANNEL_SECRET
 
 app = Flask(__name__, static_folder="static")
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory('static', filename)
+
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
