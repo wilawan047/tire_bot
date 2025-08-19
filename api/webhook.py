@@ -65,17 +65,40 @@ import os
 from flask import send_from_directory
 
 
+# ฟังก์ชันตรวจสอบว่าไฟล์มีจริงใน static/images2
+def file_exists(filename):
+    if not filename:
+        return False
+    return os.path.isfile(os.path.join("static/images2", filename))
+
+# ฟังก์ชันสร้าง URL ของรูปพร้อม fallback
 def get_image_url(filename):
-    # ฟังก์ชันนี้ใช้ได้หากคุณต้องการสร้าง URL จากชื่อไฟล์
-    # แต่ถ้าฐานข้อมูลคุณมี URL เต็มอยู่แล้ว ก็ไม่จำเป็นต้องใช้
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
+    
+    # กรณีไฟล์ไม่กำหนดหรือไม่เจอใน static/images2
+    if not filename or not file_exists(filename):
+        print(f"❌ File missing: {filename}, ใช้ fallback image")
+        # สามารถใช้รูป placeholder online หรือ default ใน static
+        fallback_file = "default-tire.jpg"
+        # ตรวจสอบ fallback file
+        if not file_exists(fallback_file):
+            return "https://via.placeholder.com/400x300?text=No+Image"
+        filename = fallback_file
+
+    # ถ้า BASE_URL ว่าง ให้ใช้ path relative ของ Flask (local testing)
     if not base_url:
-        return "https://placeholder.vercel.app/images/default-tire.jpg"
-    if filename:
+        url = f"/static/images2/{quote(filename)}"
+    else:
         url = f"{base_url}/static/images2/{quote(filename)}"
-        print("URL ที่ถูกสร้าง:", url)
-        return url
-    return f"{base_url}/static/images2/default-tire.jpg"
+    
+    print("URL ที่ถูกสร้าง:", url)
+    return url
+
+# Route สำหรับ serve static images (เพื่อให้ LINE Flex หรือ browser เข้าถึงได้)
+@app.route("/static/images2/<filename>")
+def serve_image(filename):
+    return send_from_directory("static/images2", filename)
+
 
 
 def build_quick_reply_buttons(buttons):
@@ -85,7 +108,7 @@ def build_quick_reply_buttons(buttons):
     ])
 
 def build_tire_flex(tire, model_name):
-    image_url = tire.get("tire_image_url")
+    image_url = get_image_url(tire.get("tire_image_url"))
     return {
         "type": "bubble",
         "hero": {
@@ -215,7 +238,7 @@ def get_tire_model_name_by_id(model_id):
         return {"model_name": "Unknown Model"}
     
 def build_promotion_flex(promo):
-    image_url = promo.get('image_url') # ดึง URL แบบเต็มจากฐานข้อมูล
+    image_url = get_image_url(promo.get('image_url')) # ดึง URL แบบเต็มจากฐานข้อมูล
     
     # เพิ่มการตรวจสอบเพื่อความปลอดภัย
     if not image_url or "http" not in image_url:
