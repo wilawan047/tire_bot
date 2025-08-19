@@ -3,6 +3,7 @@ import mysql.connector
 import os
 import sys
 import config
+from flask import url_for
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
@@ -213,12 +214,17 @@ def get_tire_model_name_by_id(model_id):
         return {"model_name": "Unknown Model"}
     
 def build_promotion_flex(promo):
-    image_url = get_image_url(promo.get('image_url'))
+    image_url = promo.get('image_url') # ดึง URL แบบเต็มจากฐานข้อมูล
+    
+    # เพิ่มการตรวจสอบเพื่อความปลอดภัย
+    if not image_url or "http" not in image_url:
+        image_url = "https://placeholder.vercel.app/images/default-promotion.jpg"
+    
     return {
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": image_url,
+            "url": image_url, # ใช้ URL แบบเต็มที่ดึงมา
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit"
