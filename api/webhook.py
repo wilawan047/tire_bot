@@ -386,27 +386,7 @@ def handle_message(event):
             )
 
         # 3️⃣ ขอเลือกยี่ห้อ
-        elif text == "ยี่ห้อยางรถยนต์":
-            brands = get_all_tire_brands()
-            if not brands:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบยี่ห้อยาง"))
-            else:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="เลือกยี่ห้อที่คุณต้องการ 🔽",
-                        quick_reply=build_quick_reply_buttons([
-                            (b['brand_name'], b['brand_name']) for b in brands[:10]
-                        ])
-                    )
-                )
-
-        # 4️⃣ แสดงรายการยี่ห้อทั้งหมดเป็น Quick Reply
-        elif any(kw in text.lower() for kw in [
-            "ยางแบนด์อะไรบ้าง", "ยี่ห้ออะไรบ้าง", "มียางยี่ห้ออะไร",
-            "มียางอะไรบ้าง", "มียางแบนด์อะไรบ้าง", "มียางแบนด์ไหนบ้าง",
-            "แบนด์ยาง", "ยี่ห้อยาง", "แบรนด์ยาง"
-        ]):
+        elif ("ยี่ห้อ","แบนด์") in text:
             brands = get_all_tire_brands()
             if brands:
                 quick_buttons = [(b['brand_name'], b['brand_name']) for b in brands[:13]]
@@ -420,11 +400,9 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ"))
 
-        # 5️⃣ แสดงรุ่นทั้งหมดเป็น Quick Reply
-        elif any(kw in text.lower() for kw in [
-            "รุ่นอะไรบ้าง", "มียางรุ่นอะไร", "มีรุ่นอะไรบ้าง",
-            "มีรุ่นไหนบ้าง", "รุ่นยาง", "รุ่นยางอะไร", "ยางรุ่น"
-        ]):
+
+        # 4️⃣ แสดงรุ่น
+        elif "รุ่น" in text:
             brands = get_all_tire_brands()
             all_buttons = []
             for b in brands:
@@ -441,6 +419,7 @@ def handle_message(event):
                 )
             else:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ"))
+
 
         # 6️⃣ ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
         elif (brand := find_brand_in_text(text)):
@@ -495,7 +474,7 @@ def handle_message(event):
             ))
 
         # 🔟 โปรโมชัน
-        elif text in ["โปรโมชัน", "โปรโมชั่น", "โปร"]:
+        elif ("โปร","promotion") in text.lower():
             promotions = get_active_promotions()
             if not promotions:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ขณะนี้ยังไม่มีโปรโมชันค่ะ"))
@@ -507,8 +486,9 @@ def handle_message(event):
                 quick_reply_msg = TextSendMessage(text="👇", quick_reply=build_quick_reply_buttons(quick_buttons))
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
+
         # 1️⃣1️⃣ แสดงหมวดหมู่บริการ
-        elif text in ["บริการ", "service", "บริการทั้งหมด"]:
+        elif ("บริการ","service") in text.lower():
             categories = get_all_service_categories()
             if not categories:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
