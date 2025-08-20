@@ -215,7 +215,7 @@ def build_service_list_flex(category_name, services):
                     "color": "#FFFFFF"
                 }
             ],
-            "backgroundColor": "#4A90E2",
+            "backgroundColor": "#3EEF68DA",
             "paddingAll": "md"
         },
         "body": {
@@ -309,6 +309,29 @@ def send_tires_page(reply_token, user_id):
         flex_msg,
         TextSendMessage(text="👇 เมนูเพิ่มเติม", quick_reply=build_quick_reply_buttons(nav_buttons))
     ])
+# ======================
+# 🔍 ค้นหายี่ห้อจากข้อความ
+# ======================
+def find_brand_in_text(text):
+    text_lower = text.lower()
+    brands = get_all_tire_brands()
+    for b in brands:
+        if b['brand_name'].lower() in text_lower:
+            return b
+    return None
+
+# ======================
+# 🔍 ค้นหารุ่นจากข้อความ
+# ======================
+def find_model_in_text(text):
+    text_lower = text.lower()
+    all_brands = get_all_tire_brands()
+    for b in all_brands:
+        models = get_tire_models_by_brand_id(b['brand_id'])
+        for m in models:
+            if m['model_name'].lower() in text_lower:
+                return m
+    return None
 
 
 
@@ -361,9 +384,10 @@ def handle_message(event):
                 ])
             ))
             return
+        
 
         # ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
-        brand = next((b for b in get_all_tire_brands() if b['brand_name'].lower() == text.lower()), None)
+        brand = find_brand_in_text(text)
         if brand:
             models = get_tire_models_by_brand_id(brand['brand_id'])
             if models:
@@ -391,17 +415,20 @@ def handle_message(event):
                     text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ"
                 ))
             return
-
-        # เปลี่ยนหน้า Flex
-        if text.startswith("page_"):
-            page = int(text.split("_")[1])
-            if user_id in user_pages:
-                user_pages[user_id]['page'] = page
+        
+        # ตรวจสอบชื่อรุ่น → แสดง Flex
+        model = find_model_in_text(text)
+        if model:
+            tires = get_tires_by_model_id(model['model_id'])
+            if tires:
+                user_pages[user_id] = {'model_id': model['model_id'], 'page': 1}
                 send_tires_page(reply_token, user_id)
             else:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อน"))
+                line_bot_api.reply_message(reply_token, TextSendMessage(
+                    text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ"
+                ))
             return
-
+        
         # พิกัดร้าน
         if any(w in text for w in ["ร้านอยู่ไหน", "แผนที่", "location", "พิกัด", "ที่อยู่ร้าน", "โลเคชัน"]):
             line_bot_api.reply_message(reply_token, LocationSendMessage(
@@ -413,7 +440,7 @@ def handle_message(event):
             return
 
         # ติดต่อ / เวลา
-        if text == "ติดต่อร้าน":
+        if text in ["ติดต่อ", "ติดต่อร้าน", "ติดต่อเรา", "โทรหาเรา", "เบอร์ร้าน", "เบอร์โทร"]:
             line_bot_api.reply_message(reply_token, TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097"))
             return
 
