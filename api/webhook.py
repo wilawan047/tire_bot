@@ -369,7 +369,7 @@ def handle_message(event):
             )
 
         # 2️⃣ เมนูหลัก
-        elif text in ["แนะนำ", "แนะนำยาง", "ยาง", "แนะนำหน่อย", "แนะนำยางรถยนต์", "เริ่มต้นเลือกยาง"]:
+        elif any(kw in text.lower() for kw in["แนะนำ", "แนะนำยาง",  "แนะนำหน่อย",]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
@@ -484,23 +484,7 @@ def handle_message(event):
                 quick_reply_msg = TextSendMessage(text="👇", quick_reply=build_quick_reply_buttons(quick_buttons))
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 1️⃣1️⃣ แสดงหมวดหมู่บริการ
-        elif any(kw in text.lower() for kw in ["บริการ", "service"]):
-            categories = get_all_service_categories()
-            if not categories:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
-            else:
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-                quick_buttons.extend([(cat['category'], f"หมวดบริการ:{cat['category']}") for cat in categories])
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="กรุณาเลือกหมวดหมู่บริการ 🔽",
-                        quick_reply=build_quick_reply_buttons(quick_buttons)
-                    )
-                )
-
-        # 1️⃣2️⃣ แสดงบริการในหมวดหมู่
+        # 1️⃣2️⃣ แสดงบริการในหมวดหมู่ (เช็คก่อน "บริการ")
         elif text.startswith("หมวดบริการ:"):
             category_name = text.split(":", 1)[1]
             services = get_services_by_category(category_name)
@@ -520,32 +504,51 @@ def handle_message(event):
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
+        # 1️⃣1️⃣ แสดงหมวดหมู่บริการ
+        elif any(kw in text.lower() for kw in ["บริการ", "service"]):
+            categories = get_all_service_categories()
+            if not categories:
+                line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
+            else:
+                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+                quick_buttons.extend([(cat['category'], f"หมวดบริการ:{cat['category']}") for cat in categories])
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(
+                        text="กรุณาเลือกหมวดหมู่บริการ 🔽",
+                        quick_reply=build_quick_reply_buttons(quick_buttons)
+                    )
+                )
+
         # 1️⃣3️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
-            raise Exception("ไม่เข้าใจคำสั่ง")
-
-    except Exception as e:
-        print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF:", e)
-        try:
-            answer = forward_to_chatpdf({
-                "replyToken": reply_token,
-                "userId": user_id,
-                "text": text
-            })
-            line_bot_api.reply_message(reply_token, TextSendMessage(text=answer))
-        except Exception as chatpdf_err:
-            print("❌ ChatPDF error → fallback ไป Make:", chatpdf_err)
+            print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
-                forward_to_make({
+                answer = forward_to_chatpdf({
                     "replyToken": reply_token,
                     "userId": user_id,
                     "text": text
                 })
-            except Exception as make_err:
-                print("❌ Make ก็ล้มเหลว:", make_err)
-                line_bot_api.reply_message(reply_token, TextSendMessage(
-                    text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
-                ))
+                line_bot_api.reply_message(reply_token, TextSendMessage(text=answer))
+            except Exception as chatpdf_err:
+                print("❌ ChatPDF error → fallback ไป Make:", chatpdf_err)
+                try:
+                    forward_to_make({
+                        "replyToken": reply_token,
+                        "userId": user_id,
+                        "text": text
+                    })
+                except Exception as make_err:
+                    print("❌ Make ก็ล้มเหลว:", make_err)
+                    line_bot_api.reply_message(reply_token, TextSendMessage(
+                        text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
+                    ))
+
+    except Exception as e:
+        # error จริง เช่น DB พัง, Flex ผิด format
+        print("❌ ERROR:", e)
+        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
+
 
 
 @handler.add(MessageEvent, message=StickerMessage)
