@@ -215,7 +215,7 @@ def build_service_list_flex(category_name, services):
                     "color": "#FFFFFF"
                 }
             ],
-            "backgroundColor": "#3EEF68DA",
+            "backgroundColor": "#24E651C6",
             "paddingAll": "md"
         },
         "body": {
@@ -254,7 +254,7 @@ def build_promotion_flex(promo):
         "type": "bubble",
         "hero": {
             "type": "image",
-            "url": image_url, # ใช้ URL แบบเต็มที่ดึงมา
+            "url": image_url, 
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit"
@@ -307,11 +307,9 @@ def send_tires_page(reply_token, user_id):
 
     line_bot_api.reply_message(reply_token, [
         flex_msg,
-        TextSendMessage(text="👇 เมนูเพิ่มเติม", quick_reply=build_quick_reply_buttons(nav_buttons))
+        TextSendMessage(text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม", quick_reply=build_quick_reply_buttons(nav_buttons))
     ])
-# ======================
-# 🔍 ค้นหายี่ห้อจากข้อความ
-# ======================
+
 def find_brand_in_text(text):
     text_lower = text.lower()
     brands = get_all_tire_brands()
@@ -320,9 +318,7 @@ def find_brand_in_text(text):
             return b
     return None
 
-# ======================
-# 🔍 ค้นหารุ่นจากข้อความ
-# ======================
+
 def find_model_in_text(text):
     text_lower = text.lower()
     all_brands = get_all_tire_brands()
@@ -332,12 +328,10 @@ def find_model_in_text(text):
             if m['model_name'].lower() in text_lower:
                 return m
     return None
-# ======================
-# 🔍 ค้นหาโปรโมชันจากข้อความ
-# ======================
+
 def find_promotion_in_text(text):
     text_lower = text.lower()
-    promotions = get_active_promotions()  # ดึงโปรโมชันที่ยังใช้งานอยู่
+    promotions = get_active_promotions()  
     for p in promotions:
         if p['title'].lower() in text_lower:
             return p
@@ -368,12 +362,12 @@ def handle_message(event):
                 )
             )
 
-        # 2️⃣ เมนูหลัก
-        elif any(kw in text.lower() for kw in["แนะนำ", "แนะนำยาง",  "แนะนำหน่อย",]):
+        # เมนูหลัก
+        elif any(kw in text.lower() for kw in ["แนะนำ", "แนะนำยาง", "แนะนำหน่อย"]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
-                    text="เลือกเมนูที่ต้องการ👇",
+                    text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                     quick_reply=build_quick_reply_buttons([
                         ("🚗 ยี่ห้อยางรถยนต์", "ยี่ห้อยางรถยนต์"),
                         ("🛠️ บริการ", "บริการ"),
@@ -384,7 +378,7 @@ def handle_message(event):
                 )
             )
 
-        # 3️⃣ ขอเลือกยี่ห้อ
+        # ขอเลือกยี่ห้อ
         elif any(kw in text for kw in ["ยี่ห้อ", "แบนด์"]):
             brands = get_all_tire_brands()
             if brands:
@@ -399,7 +393,7 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ"))
 
-        # 4️⃣ แสดงรุ่น
+        # แสดงรุ่น
         elif "รุ่น" in text:
             brands = get_all_tire_brands()
             all_buttons = []
@@ -418,7 +412,7 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ"))
 
-        # 5️⃣ ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
+        # ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
         elif (brand := find_brand_in_text(text)):
             models = get_tire_models_by_brand_id(brand['brand_id'])
             if models:
@@ -435,7 +429,7 @@ def handle_message(event):
                     TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand['brand_name']} ในระบบ")
                 )
 
-        # 6️⃣ ตรวจสอบชื่อรุ่น → แสดง Flex
+        # ตรวจสอบชื่อรุ่น → แสดง Flex
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
             tires = get_tires_by_model_id(model['model_id'])
             if tires:
@@ -447,7 +441,22 @@ def handle_message(event):
                     TextSendMessage(text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ")
                 )
 
-        # 7️⃣ พิกัดร้าน
+        # จัดการข้อความ page_2, page_3 ...
+        elif text.startswith("page_"):
+            try:
+                page_num = int(text.split("_")[1])
+                if user_id in user_pages:
+                    user_pages[user_id]['page'] = page_num
+                    send_tires_page(reply_token, user_id)
+                else:
+                    line_bot_api.reply_message(
+                        reply_token,
+                        TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ")
+                    )
+            except Exception as e:
+                line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
+
+        # พิกัดร้าน
         elif any(w in text for w in ["ร้านอยู่ไหน", "แผนที่", "location", "พิกัด", "ที่อยู่ร้าน",
                                       "โลเคชัน", "ที่ตั้งร้าน", "ร้านอยู่ที่ไหน", "แผนที่ร้าน"]):
             line_bot_api.reply_message(
@@ -460,18 +469,18 @@ def handle_message(event):
                 )
             )
 
-        # 8️⃣ ติดต่อ / เวลา
+        # ติดต่อ / เวลา
         elif text in ["ติดต่อ", "ติดต่อร้าน", "ติดต่อร้านยาง", "ติดต่อเรา", "เบอร์โทร", "โทรศัพท์"]:
             line_bot_api.reply_message(reply_token, TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097"))
 
-        # 9️⃣ เวลาเปิดทำการ
+        # เวลาเปิดทำการ
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30")
             )
 
-        # 🔟 โปรโมชัน
+        # โปรโมชัน
         elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
             promotions = get_active_promotions()
             if not promotions:
@@ -481,46 +490,31 @@ def handle_message(event):
                 carousel = {"type": "carousel", "contents": bubbles}
                 flex_msg = FlexSendMessage(alt_text="โปรโมชันล่าสุด", contents=carousel)
                 quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-                quick_reply_msg = TextSendMessage(text="👇", quick_reply=build_quick_reply_buttons(quick_buttons))
-                line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
-
-        # 1️⃣2️⃣ แสดงบริการในหมวดหมู่ (เช็คก่อน "บริการ")
-        elif text.startswith("หมวดบริการ:"):
-            category_name = text.split(":", 1)[1]
-            services = get_services_by_category(category_name)
-            if not services:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text=f"ไม่มีบริการในหมวดหมู่ {category_name}"))
-            else:
-                flex_content = build_service_list_flex(category_name, services)
-                flex_msg = FlexSendMessage(alt_text=f"บริการ {category_name}", contents=flex_content)
-                quick_buttons = [
-                    ("🏠 เมนูหลัก", "แนะนำ"),
-                    ("↩️ ย้อนกลับ", "บริการ"),
-                    ("📋 ดูหมวดอื่น", "บริการ")
-                ]
                 quick_reply_msg = TextSendMessage(
-                    text="หากท่านต้องการทำการจองเพื่อเข้าใช้บริการสามารถกดดูรายละเอียดบริการได้ที่ rich menu ครับ 📌",
+                    text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                     quick_reply=build_quick_reply_buttons(quick_buttons)
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 1️⃣1️⃣ แสดงหมวดหมู่บริการ
-        elif any(kw in text.lower() for kw in ["บริการ", "service"]):
-            categories = get_all_service_categories()
-            if not categories:
+        # แสดงบริการทั้งหมด
+        elif text.lower() in ["บริการ", "service"]:
+            services = get_all_services()
+            if not services:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
             else:
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-                quick_buttons.extend([(cat['category'], f"หมวดบริการ:{cat['category']}") for cat in categories])
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="กรุณาเลือกหมวดหมู่บริการ 🔽",
-                        quick_reply=build_quick_reply_buttons(quick_buttons)
-                    )
+                flex_content = build_service_list_flex("บริการทั้งหมด", services)
+                flex_msg = FlexSendMessage(
+                    alt_text="บริการทั้งหมด",
+                    contents=flex_content
                 )
+                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+                quick_reply_msg = TextSendMessage(
+                    text="เลือกบริการที่คุณสนใจครับ 📌",
+                    quick_reply=build_quick_reply_buttons(quick_buttons)
+                )
+                line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 1️⃣3️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
+        # ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
@@ -545,17 +539,14 @@ def handle_message(event):
                     ))
 
     except Exception as e:
-        # error จริง เช่น DB พัง, Flex ผิด format
         print("❌ ERROR:", e)
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
-
-
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
     reply_token = event.reply_token
     line_bot_api.reply_message(reply_token, TextSendMessage(
-        text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ👇",
+        text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ",
         quick_reply=build_quick_reply_buttons([
             ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
             ("🛠️ บริการ", "บริการ"),
