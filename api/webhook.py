@@ -159,12 +159,12 @@ def build_tire_flex(tire, model_name):
 
 def build_service_list_flex(category_name, services):
     """สร้าง Flex Message แสดงรายการบริการแบบง่ายๆ"""
-    
+
     # สร้างรายการบริการ
-    service_items = [
+    service_items = []
     for service in services:
         # สร้างรายการตัวเลือกบริการ
-       
+        service_contents = [
             {
                 "type": "text",
                 "text": service.get('service_name', 'ไม่ระบุ'),
@@ -172,11 +172,9 @@ def build_service_list_flex(category_name, services):
                 "weight": "bold",
                 "wrap": True
             }
-    ]
+        ]
         
-
-        
-    service_item = {
+        service_item = {
             "type": "box",
             "layout": "horizontal",
             "margin": "sm",
@@ -196,8 +194,8 @@ def build_service_list_flex(category_name, services):
                 }
             ]
         }
-    service_items.append(service_item)
-    
+        service_items.append(service_item)
+
     # สร้าง Flex Message
     return {
         "type": "bubble",
