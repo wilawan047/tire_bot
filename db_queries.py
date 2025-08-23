@@ -89,18 +89,6 @@ def get_active_promotions():
     finally: conn.close()
 
 
-def get_all_service_categories():
-    """ดึงหมวดหมู่บริการทั้งหมดจากตาราง services."""
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT DISTINCT category FROM services")
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Error getting service categories: {err}")
-        return []
-    finally: conn.close()
 
 def get_services_by_category(category_name):
     """ดึงบริการทั้งหมดในหมวดหมู่ที่ระบุ."""
@@ -108,32 +96,10 @@ def get_services_by_category(category_name):
     if not conn: return []
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT s.service_id, s.category, s.service_name, 
-                   GROUP_CONCAT(so.option_name SEPARATOR ', ') as options
-            FROM services s
-            LEFT JOIN service_options so ON s.service_id = so.service_id
-            WHERE s.category = %s
-            GROUP BY s.service_id, s.category, s.service_name
-            ORDER BY s.service_id
-        """, (category_name,))
+        cursor.execute("SELECT service_id, category, service_name FROM services ORDER BY service_id")
         return cursor.fetchall()
     except mysql.connector.Error as err:
-        print(f"Error getting services by category: {err}")
+        print(f"Error getting all services: {err}")
         return []
-    finally: conn.close()
-
-
-
-def get_service_options_by_service_id(service_id):
-    """ดึงตัวเลือกของบริการจาก service_id."""
-    conn = get_db_connection()
-    if not conn: return []
-    try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM service_options WHERE service_id = %s", (service_id,))
-        return cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Error getting service options: {err}")
-        return []
-    finally: conn.close()
+    finally:
+        conn.close()
