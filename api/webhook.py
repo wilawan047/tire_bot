@@ -102,7 +102,7 @@ def get_image_url(filename):
 
 
 # ฟังก์ชันเดิม
-def build_quick_reply_with_extra(buttons):
+def build_quick_reply_buttons(buttons):
     return QuickReply(
         items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
     )
@@ -113,13 +113,11 @@ def build_quick_reply_with_extra(buttons):
     extra_button = ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
     if extra_button not in buttons:
         buttons.insert(0, extra_button)
-    return build_quick_reply_with_extra(buttons)
+    return QuickReply(
+        items=[QuickReplyButton(action=MessageAction(label=label, text=text))
+               for label, text in buttons]
+    )
 
-def build_quick_reply_with_extra(buttons):
-    return QuickReply(items=[
-        QuickReplyButton(action=MessageAction(label=label, text=text))
-        for label, text in buttons
-    ])
 
 def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
@@ -387,7 +385,10 @@ def handle_message(event):
                     )
                 )
             else:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ"))
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ")
+                )
 
         # แสดงรุ่น
         elif "รุ่น" in text:
@@ -406,7 +407,10 @@ def handle_message(event):
                     )
                 )
             else:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ"))
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ")
+                )
 
         # ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
         elif (brand := find_brand_in_text(text)):
@@ -454,7 +458,10 @@ def handle_message(event):
                         TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ")
                     )
             except Exception as e:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
+                )
 
         # 8️⃣ พิกัดร้าน
         elif any(w in text for w in [
@@ -463,26 +470,48 @@ def handle_message(event):
         ]):
             line_bot_api.reply_message(
                 reply_token,
-                LocationSendMessage(
-                    title="ไทร์พลัส บุรีรัมย์แสงเจริญการยาง",
-                    address="365 หมู่ 3 ถนน จิระ ต.ในเมือง อ.เมือง จ.บุรีรัมย์ 31000",
-                    latitude=14.9977752,
-                    longitude=103.0387382
-                )
+                [
+                    LocationSendMessage(
+                        title="ไทร์พลัส บุรีรัมย์แสงเจริญการยาง",
+                        address="365 หมู่ 3 ถนน จิระ ต.ในเมือง อ.เมือง จ.บุรีรัมย์ 31000",
+                        latitude=14.9977752,
+                        longitude=103.0387382
+                    ),
+                    TextSendMessage(
+                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                        quick_reply=build_quick_reply_with_extra([
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
+                ]
             )
 
-        # 9️⃣ ติดต่อ / เวลา
+        # 9️⃣ ติดต่อ / เวลาเปิดทำการ
         elif text in ["ติดต่อ", "ติดต่อร้าน", "ติดต่อร้านยาง", "ติดต่อเรา", "เบอร์โทร", "โทรศัพท์"]:
             line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097")
+                TextSendMessage(
+                    text="ติดต่อเราได้ที่ ☎️ 044 611 097",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("🏠 เมนูหลัก", "แนะนำ"),
+                        ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                    ])
+                )
             )
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30")
+                TextSendMessage(
+                    text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("🏠 เมนูหลัก", "แนะนำ"),
+                        ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                    ])
+                )
             )
 
+        # 10️⃣ ถามเพิ่มเติม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
             line_bot_api.reply_message(
                 reply_token,
@@ -490,34 +519,45 @@ def handle_message(event):
                     text="คุณสามารถพิมพ์คำถามอะไรก็ได้เลยค่ะ เช่น:\n"
                          "- รุ่นยางสำหรับรถเก๋ง\n"
                          "- บริการเปลี่ยนถ่ายน้ำมันเครื่อง\n"
-                         "- โปรโมชั่นเดือนนี้"
+                         "- โปรโมชั่นเดือนนี้",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("🏠 เมนูหลัก", "แนะนำ"),
+                        ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
+                        ("🛠️ บริการ", "บริการ"),
+                        ("🎉 โปรโมชัน", "โปรโมชัน"),
+                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                        ("📞 ติดต่อร้าน", "ติดต่อร้าน")
+                    ])
                 )
             )
 
-        # 10️⃣ โปรโมชัน
+        # 11️⃣ โปรโมชัน
         elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
             promotions = get_active_promotions()
             if not promotions:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ขณะนี้ยังไม่มีโปรโมชันค่ะ"))
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ขณะนี้ยังไม่มีโปรโมชันค่ะ")
+                )
             else:
                 bubbles = [build_promotion_flex(p) for p in promotions[:10]]
                 carousel = {"type": "carousel", "contents": bubbles}
                 flex_msg = FlexSendMessage(alt_text="โปรโมชันล่าสุด", contents=carousel)
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")
-                                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
+                quick_buttons = [
+                    ("🏠 เมนูหลัก", "แนะนำ"),
+                    ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                ]
                 quick_reply_msg = TextSendMessage(
                     text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                     quick_reply=build_quick_reply_with_extra(quick_buttons)
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
-        
-        # 11️⃣ บริการ
+
+        # 12️⃣ บริการ
         elif any(kw in text.lower() for kw in ["บริการ", "service"]):
-            # ดึงหมวดหมู่บริการทั้งหมดจากฐานข้อมูล
             service_categories = get_all_service_categories()
             if service_categories:
-                # สร้างปุ่ม Quick Reply จากหมวดหมู่ที่ได้
-                quick_buttons = [(cat['category'], cat['category']) for cat in service_categories[:13]]  # จำกัดจำนวนปุ่ม
+                quick_buttons = [(cat['category'], cat['category']) for cat in service_categories[:13]]
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(
@@ -531,9 +571,8 @@ def handle_message(event):
                     TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ")
                 )
 
-        # 11.1️⃣ ผู้ใช้เลือกหมวดหมู่
+        # 12.1️⃣ ผู้ใช้เลือกหมวดหมู่บริการ
         elif (category := get_services_by_category(text)):
-            # category คือ list ของ service dict
             flex_content = build_service_list_flex(text, category)
             flex_msg = FlexSendMessage(
                 alt_text=f"บริการหมวด {text}",
@@ -546,7 +585,7 @@ def handle_message(event):
             )
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 12️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
+        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
@@ -573,20 +612,29 @@ def handle_message(event):
 
     except Exception as e:
         print("❌ ERROR:", e)
-        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
+        line_bot_api.reply_message(
+            reply_token,
+            TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
+        )
+
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
     reply_token = event.reply_token
-    line_bot_api.reply_message(reply_token, TextSendMessage(
-        text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ👇",
-        quick_reply=build_quick_reply_with_extra([
-            ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
-            ("🛠️ บริการ", "บริการ"),
-            ("🎉 โปรโมชัน", "โปรโมชัน"),
-            ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
-            ("📞 ติดต่อร้าน", "ติดต่อร้าน")
-        ])
-    ))
+    line_bot_api.reply_message(
+        reply_token,
+        TextSendMessage(
+            text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ👇",
+            quick_reply=build_quick_reply_with_extra([
+                ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
+                ("🛠️ บริการ", "บริการ"),
+                ("🎉 โปรโมชัน", "โปรโมชัน"),
+                ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                ("📞 ติดต่อร้าน", "ติดต่อร้าน")
+            ])
+        )
+    )
 
-if __name__ == "__main__": app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
