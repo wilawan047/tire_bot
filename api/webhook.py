@@ -107,12 +107,13 @@ def build_quick_reply_buttons(buttons):
         items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
     )
 
-# ฟังก์ชันใหม่ (เพิ่มเข้าไปเลย)
-def build_quick_reply_with_extra(buttons):
-    """เพิ่มปุ่ม ❓ ถามคำถามอื่น ให้ทุกเมนูอัตโนมัติ"""
-    buttons.append(("❓ ถามคำถามอื่น", "ถามเพิ่มเติม"))
-    return build_quick_reply_buttons(buttons)
 
+def build_quick_reply_with_extra(buttons):
+    """เพิ่มปุ่ม ❓ ถามคำถามอื่น ให้ทุกเมนูอัตโนมัติ และย้ายมาไว้หน้าสุด"""
+    extra_button = ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+    if extra_button not in buttons:
+        buttons.insert(0, extra_button)
+    return build_quick_reply_buttons(buttons)
 
 def build_quick_reply_buttons(buttons):
     return QuickReply(items=[
@@ -513,12 +514,33 @@ def handle_message(event):
                 bubbles = [build_promotion_flex(p) for p in promotions[:10]]
                 carousel = {"type": "carousel", "contents": bubbles}
                 flex_msg = FlexSendMessage(alt_text="โปรโมชันล่าสุด", contents=carousel)
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")
+                                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
                 quick_reply_msg = TextSendMessage(
                     text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                     quick_reply=build_quick_reply_buttons(quick_buttons)
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
+        
+        # 11️⃣ บริการ
+        elif any(kw in text.lower() for kw in ["บริการ", "service"]):
+            # ดึงหมวดหมู่บริการทั้งหมดจากฐานข้อมูล
+            service_categories = get_all_service_categories()
+            if service_categories:
+                # สร้างปุ่ม Quick Reply จากหมวดหมู่ที่ได้
+                quick_buttons = [(cat['category'], cat['category']) for cat in service_categories[:13]]  # จำกัดจำนวนปุ่ม
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(
+                        text="🛠️ บริการของเรา:\nเลือกประเภทบริการที่คุณสนใจ 🔽",
+                        quick_reply=build_quick_reply_buttons(quick_buttons)
+                    )
+                )
+            else:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ")
+                )
 
         # 11.1️⃣ ผู้ใช้เลือกหมวดหมู่
         elif (category := get_services_by_category(text)):
