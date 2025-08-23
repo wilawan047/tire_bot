@@ -102,7 +102,7 @@ def get_image_url(filename):
 
 
 # ฟังก์ชันเดิม
-def build_quick_reply_buttons(buttons):
+def build_quick_reply_with_extra(buttons):
     return QuickReply(
         items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
     )
@@ -113,9 +113,9 @@ def build_quick_reply_with_extra(buttons):
     extra_button = ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
     if extra_button not in buttons:
         buttons.insert(0, extra_button)
-    return build_quick_reply_buttons(buttons)
+    return build_quick_reply_with_extra(buttons)
 
-def build_quick_reply_buttons(buttons):
+def build_quick_reply_with_extra(buttons):
     return QuickReply(items=[
         QuickReplyButton(action=MessageAction(label=label, text=text))
         for label, text in buttons
@@ -161,11 +161,10 @@ def build_service_list_flex(category_name, services):
     """สร้าง Flex Message แสดงรายการบริการแบบง่ายๆ"""
     
     # สร้างรายการบริการ
-    service_items = []
+    service_items = [
     for service in services:
         # สร้างรายการตัวเลือกบริการ
-        options_text = service.get('options', '')
-        service_contents = [
+       
             {
                 "type": "text",
                 "text": service.get('service_name', 'ไม่ระบุ'),
@@ -173,19 +172,11 @@ def build_service_list_flex(category_name, services):
                 "weight": "bold",
                 "wrap": True
             }
-        ]
+    ]
         
-        # เพิ่มตัวเลือกถ้ามี
-        if options_text:
-            service_contents.append({
-                "type": "text",
-                "text": f"ตัวเลือก: {options_text}",
-                "size": "xs",
-                "color": "#666666",
-                "wrap": True
-            })
+
         
-        service_item = {
+    service_item = {
             "type": "box",
             "layout": "horizontal",
             "margin": "sm",
@@ -205,7 +196,7 @@ def build_service_list_flex(category_name, services):
                 }
             ]
         }
-        service_items.append(service_item)
+    service_items.append(service_item)
     
     # สร้าง Flex Message
     return {
@@ -315,7 +306,7 @@ def send_tires_page(reply_token, user_id):
 
     line_bot_api.reply_message(reply_token, [
         flex_msg,
-        TextSendMessage(text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม", quick_reply=build_quick_reply_buttons(nav_buttons))
+        TextSendMessage(text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม", quick_reply=build_quick_reply_with_extra(nav_buttons))
     ])
 
 def find_brand_in_text(text):
@@ -394,7 +385,7 @@ def handle_message(event):
                     reply_token,
                     TextSendMessage(
                         text="📌 ยี่ห้อที่มีในร้าน:\nเลือกยี่ห้อที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_buttons(quick_buttons)
+                        quick_reply=build_quick_reply_with_extra(quick_buttons)
                     )
                 )
             else:
@@ -413,7 +404,7 @@ def handle_message(event):
                     reply_token,
                     TextSendMessage(
                         text="📌 รุ่นยางที่มีในร้าน:\nเลือกรุ่นที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_buttons(all_buttons[:13])
+                        quick_reply=build_quick_reply_with_extra(all_buttons[:13])
                     )
                 )
             else:
@@ -518,7 +509,7 @@ def handle_message(event):
                                  ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
                 quick_reply_msg = TextSendMessage(
                     text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                    quick_reply=build_quick_reply_buttons(quick_buttons)
+                    quick_reply=build_quick_reply_with_extra(quick_buttons)
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
         
@@ -533,7 +524,7 @@ def handle_message(event):
                     reply_token,
                     TextSendMessage(
                         text="🛠️ บริการของเรา:\nเลือกประเภทบริการที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_buttons(quick_buttons)
+                        quick_reply=build_quick_reply_with_extra(quick_buttons)
                     )
                 )
             else:
@@ -553,7 +544,7 @@ def handle_message(event):
             quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
             quick_reply_msg = TextSendMessage(
                 text="เลือกบริการเพิ่มเติมหรือกลับไปเมนูหลัก",
-                quick_reply=build_quick_reply_buttons(quick_buttons)
+                quick_reply=build_quick_reply_with_extra(quick_buttons)
             )
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
