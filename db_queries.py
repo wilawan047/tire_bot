@@ -88,22 +88,35 @@ def get_active_promotions():
         return []
     finally: conn.close()
 
-def get_all_services():
-    """ดึงข้อมูลทั้งหมดจากตาราง services"""
+def get_all_service_categories():
+    """ดึงหมวดหมู่บริการทั้งหมดจากตาราง services."""
     conn = get_db_connection()
-    if not conn:
+    if not conn: return []
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT DISTINCT category FROM services")
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Error getting service categories: {err}")
         return []
-
+    finally: conn.close()
+def get_services_by_category(category_name):
+    """ดึงบริการทั้งหมดในหมวดหมู่ที่ระบุ."""
+    conn = get_db_connection()
+    if not conn: return []
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT service_id, category, service_name
-            FROM services
-            ORDER BY service_id
-        """)
+            SELECT s.service_id, s.category, s.service_name, 
+                   GROUP_CONCAT(so.option_name SEPARATOR ', ') as options
+            FROM services s
+            LEFT JOIN service_options so ON s.service_id = so.service_id
+            WHERE s.category = %s
+            GROUP BY s.service_id, s.category, s.service_name
+            ORDER BY s.service_id
+        """, (category_name,))
         return cursor.fetchall()
     except mysql.connector.Error as err:
-        print(f"Error getting services: {err}")
+        print(f"Error getting services by category: {err}")
         return []
-    finally:
-        conn.close()
+    finally: conn.close()
