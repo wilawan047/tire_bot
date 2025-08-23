@@ -429,7 +429,7 @@ def handle_message(event):
                     TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand['brand_name']} ในระบบ")
                 )
 
-        # ตรวจสอบชื่อรุ่น → แสดง Flex
+          # 6️⃣ ตรวจสอบชื่อรุ่น → แสดง Flex
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
             tires = get_tires_by_model_id(model['model_id'])
             if tires:
@@ -438,10 +438,12 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ")
+                    TextSendMessage(
+                        text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ"
+                    )
                 )
 
-        # จัดการข้อความ page_2, page_3 ...
+        # 7️⃣ จัดการข้อความ page_2, page_3 ...
         elif text.startswith("page_"):
             try:
                 page_num = int(text.split("_")[1])
@@ -456,7 +458,7 @@ def handle_message(event):
             except Exception as e:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
 
-        # พิกัดร้าน
+        # 8️⃣ พิกัดร้าน
         elif any(w in text for w in ["ร้านอยู่ไหน", "แผนที่", "location", "พิกัด", "ที่อยู่ร้าน",
                                       "โลเคชัน", "ที่ตั้งร้าน", "ร้านอยู่ที่ไหน", "แผนที่ร้าน"]):
             line_bot_api.reply_message(
@@ -469,18 +471,20 @@ def handle_message(event):
                 )
             )
 
-        # ติดต่อ / เวลา
+        # 9️⃣ ติดต่อ / เวลา
         elif text in ["ติดต่อ", "ติดต่อร้าน", "ติดต่อร้านยาง", "ติดต่อเรา", "เบอร์โทร", "โทรศัพท์"]:
-            line_bot_api.reply_message(reply_token, TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097"))
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097")
+            )
 
-        # เวลาเปิดทำการ
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30")
             )
 
-        # โปรโมชัน
+        # 10️⃣ โปรโมชัน
         elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
             promotions = get_active_promotions()
             if not promotions:
@@ -496,9 +500,10 @@ def handle_message(event):
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # แสดงบริการทั้งหมด
+        # 11️⃣ แสดงบริการทั้งหมด
         elif text.lower() in ["บริการ", "service"]:
-            services = get_all_services()
+    # ดึงบริการทั้งหมดโดยไม่ระบุหมวดหมู่
+            services = get_all_service_categories()
             if not services:
                 line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
             else:
@@ -514,7 +519,7 @@ def handle_message(event):
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
+        # 12️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
@@ -534,27 +539,11 @@ def handle_message(event):
                     })
                 except Exception as make_err:
                     print("❌ Make ก็ล้มเหลว:", make_err)
-                    line_bot_api.reply_message(reply_token, TextSendMessage(
-                        text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
-                    ))
+                    line_bot_api.reply_message(
+                        reply_token,
+                        TextSendMessage(text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅")
+                    )
 
     except Exception as e:
         print("❌ ERROR:", e)
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
-
-@handler.add(MessageEvent, message=StickerMessage)
-def handle_sticker(event):
-    reply_token = event.reply_token
-    line_bot_api.reply_message(reply_token, TextSendMessage(
-        text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ",
-        quick_reply=build_quick_reply_buttons([
-            ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
-            ("🛠️ บริการ", "บริการ"),
-            ("🎉 โปรโมชัน", "โปรโมชัน"),
-            ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
-            ("📞 ติดต่อร้าน", "ติดต่อร้าน")
-        ])
-    ))
-    
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
