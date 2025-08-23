@@ -1,17 +1,15 @@
-from flask import Flask, request, abort, jsonify, send_from_directory
-import mysql.connector
 import os
 import sys
+import re
+from urllib.parse import quote
+from werkzeug.utils import secure_filename
+
+import mysql.connector
+from flask import Flask, request, abort, jsonify, send_from_directory, url_for
+
 import config
-from flask import url_for
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
-from werkzeug.utils import secure_filename
-from urllib.parse import quote
-from flask import send_from_directory
-from urllib.parse import quote
-import re
 from db_queries import (
     get_active_promotions,
     get_all_tire_brands, get_tire_models_by_brand_id,
@@ -25,13 +23,11 @@ from linebot.models import (
     QuickReply, QuickReplyButton, MessageAction,
     FlexSendMessage, LocationSendMessage, StickerMessage
 )
-import config
+
 LINE_CHANNEL_ACCESS_TOKEN = config.LINE_CHANNEL_ACCESS_TOKEN
 LINE_CHANNEL_SECRET = config.LINE_CHANNEL_SECRET
 
 app = Flask(__name__, static_folder="static")
-
-
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
@@ -105,6 +101,17 @@ def get_image_url(filename):
     return url
 
 
+# ฟังก์ชันเดิม
+def build_quick_reply_buttons(buttons):
+    return QuickReply(
+        items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
+    )
+
+# ฟังก์ชันใหม่ (เพิ่มเข้าไปเลย)
+def build_quick_reply_with_extra(buttons):
+    """เพิ่มปุ่ม ❓ ถามคำถามอื่น ให้ทุกเมนูอัตโนมัติ"""
+    buttons.append(("❓ ถามคำถามอื่น", "ถามเพิ่มเติม"))
+    return build_quick_reply_buttons(buttons)
 
 
 def build_quick_reply_buttons(buttons):
@@ -215,7 +222,7 @@ def build_service_list_flex(category_name, services):
                     "color": "#FFFFFF"
                 }
             ],
-            "backgroundColor": "#24E651C6",
+            "backgroundColor": "#1EC445C5",
             "paddingAll": "md"
         },
         "body": {
@@ -338,7 +345,6 @@ def find_promotion_in_text(text):
     return None
 
 
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
@@ -352,7 +358,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\nต้องการให้เราช่วยแนะนำยาง หรือสอบถามบริการอื่น ๆ ไหมคะ 👇",
-                    quick_reply=build_quick_reply_buttons([
+                    quick_reply=build_quick_reply_with_extra([
                         ("🚗 แนะนำยาง", "แนะนำ"),
                         ("🛠️ บริการ", "บริการ"),
                         ("🎉 โปรโมชัน", "โปรโมชัน"),
@@ -368,7 +374,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                    quick_reply=build_quick_reply_buttons([
+                    quick_reply=build_quick_reply_with_extra([
                         ("🚗 ยี่ห้อยางรถยนต์", "ยี่ห้อยางรถยนต์"),
                         ("🛠️ บริการ", "บริการ"),
                         ("🎉 โปรโมชัน", "โปรโมชัน"),
@@ -420,7 +426,9 @@ def handle_message(event):
                     reply_token,
                     TextSendMessage(
                         text=f"กรุณาเลือกรุ่นยางของ {brand['brand_name']} 🔽",
-                        quick_reply=build_quick_reply_buttons([(m['model_name'], m['model_name']) for m in models[:13]])
+                        quick_reply=build_quick_reply_with_extra(
+                            [(m['model_name'], m['model_name']) for m in models[:13]]
+                        )
                     )
                 )
             else:
@@ -429,7 +437,7 @@ def handle_message(event):
                     TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand['brand_name']} ในระบบ")
                 )
 
-          # 6️⃣ ตรวจสอบชื่อรุ่น → แสดง Flex
+        # 6️⃣ ตรวจสอบชื่อรุ่น → แสดง Flex
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
             tires = get_tires_by_model_id(model['model_id'])
             if tires:
@@ -459,8 +467,10 @@ def handle_message(event):
                 line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
 
         # 8️⃣ พิกัดร้าน
-        elif any(w in text for w in ["ร้านอยู่ไหน", "แผนที่", "location", "พิกัด", "ที่อยู่ร้าน",
-                                      "โลเคชัน", "ที่ตั้งร้าน", "ร้านอยู่ที่ไหน", "แผนที่ร้าน"]):
+        elif any(w in text for w in [
+            "ร้านอยู่ไหน", "แผนที่", "location", "พิกัด", "ที่อยู่ร้าน",
+            "โลเคชัน", "ที่ตั้งร้าน", "ร้านอยู่ที่ไหน", "แผนที่ร้าน"
+        ]):
             line_bot_api.reply_message(
                 reply_token,
                 LocationSendMessage(
@@ -477,11 +487,21 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(text="ติดต่อเราได้ที่ ☎️ 044 611 097")
             )
-
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30")
+            )
+
+        elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(
+                    text="คุณสามารถพิมพ์คำถามอะไรก็ได้เลยค่ะ เช่น:\n"
+                         "- รุ่นยางสำหรับรถเก๋ง\n"
+                         "- บริการเปลี่ยนถ่ายน้ำมันเครื่อง\n"
+                         "- โปรโมชั่นเดือนนี้"
+                )
             )
 
         # 10️⃣ โปรโมชัน
@@ -500,24 +520,20 @@ def handle_message(event):
                 )
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 11️⃣ แสดงบริการทั้งหมด
-        elif text.lower() in ["บริการ", "service"]:
-    # ดึงบริการทั้งหมดโดยไม่ระบุหมวดหมู่
-            services = get_all_service_categories()
-            if not services:
-                line_bot_api.reply_message(reply_token, TextSendMessage(text="ยังไม่มีข้อมูลบริการในระบบค่ะ"))
-            else:
-                flex_content = build_service_list_flex("บริการทั้งหมด", services)
-                flex_msg = FlexSendMessage(
-                    alt_text="บริการทั้งหมด",
-                    contents=flex_content
-                )
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-                quick_reply_msg = TextSendMessage(
-                    text="เลือกบริการที่คุณสนใจครับ 📌",
-                    quick_reply=build_quick_reply_buttons(quick_buttons)
-                )
-                line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
+        # 11.1️⃣ ผู้ใช้เลือกหมวดหมู่
+        elif (category := get_services_by_category(text)):
+            # category คือ list ของ service dict
+            flex_content = build_service_list_flex(text, category)
+            flex_msg = FlexSendMessage(
+                alt_text=f"บริการหมวด {text}",
+                contents=flex_content
+            )
+            quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+            quick_reply_msg = TextSendMessage(
+                text="เลือกบริการเพิ่มเติมหรือกลับไปเมนูหลัก",
+                quick_reply=build_quick_reply_buttons(quick_buttons)
+            )
+            line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
         # 12️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
@@ -547,3 +563,19 @@ def handle_message(event):
     except Exception as e:
         print("❌ ERROR:", e)
         line_bot_api.reply_message(reply_token, TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"))
+
+@handler.add(MessageEvent, message=StickerMessage)
+def handle_sticker(event):
+    reply_token = event.reply_token
+    line_bot_api.reply_message(reply_token, TextSendMessage(
+        text="ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\nต้องการให้เราช่วยอะไรดีคะ👇",
+        quick_reply=build_quick_reply_with_extra([
+            ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
+            ("🛠️ บริการ", "บริการ"),
+            ("🎉 โปรโมชัน", "โปรโมชัน"),
+            ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+            ("📞 ติดต่อร้าน", "ติดต่อร้าน")
+        ])
+    ))
+
+if __name__ == "__main__": app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
