@@ -120,6 +120,76 @@ def build_quick_reply_with_extra(buttons):
     )
 
 
+def build_button_list_bubble(title_text, items):
+    """Generic bubble showing a vertical list of buttons.
+
+    items: list of (label, text) tuples used for MessageAction
+    """
+    buttons = []
+    for label, text in items:
+        buttons.append({
+            "type": "button",
+            "style": "secondary",
+            "margin": "sm",
+            "action": {
+                "type": "message",
+                "label": label,
+                "text": text
+            }
+        })
+
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": title_text,
+                    "weight": "bold",
+                    "size": "lg"
+                }
+            ]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons or [
+                {"type": "text", "text": "ไม่พบข้อมูล", "size": "sm"}
+            ]
+        }
+    }
+
+
+def build_brand_list_flex(brands):
+    """Create a Flex carousel of brand buttons from DB rows."""
+    items = [(b['brand_name'], b['brand_name']) for b in brands]
+    bubbles = []
+    chunk_size = 12
+    for i in range(0, len(items), chunk_size):
+        chunk = items[i:i + chunk_size]
+        bubbles.append(build_button_list_bubble("📌 เลือกยี่ห้อยางรถยนต์", chunk))
+    if not bubbles:
+        bubbles = [build_button_list_bubble("📌 เลือกยี่ห้อยางรถยนต์", [])]
+    return {"type": "carousel", "contents": bubbles[:10]}
+
+
+def build_model_list_flex(models, brand_name=None):
+    """Create a Flex carousel of model buttons from DB rows."""
+    title = f"📌 รุ่นของ {brand_name}" if brand_name else "📌 เลือกรุ่นยาง"
+    items = [(m['model_name'], m['model_name']) for m in models]
+    bubbles = []
+    chunk_size = 12
+    for i in range(0, len(items), chunk_size):
+        chunk = items[i:i + chunk_size]
+        bubbles.append(build_button_list_bubble(title, chunk))
+    if not bubbles:
+        bubbles = [build_button_list_bubble(title, [])]
+    return {"type": "carousel", "contents": bubbles[:10]}
+
+
 def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
     return {
@@ -490,14 +560,20 @@ def handle_message(event):
         elif any(kw in text for kw in ["ยี่ห้อ", "แบนด์"]):
             brands = get_all_tire_brands()
             if brands:
-                quick_buttons = [(b['brand_name'], b['brand_name']) for b in brands[:13]]
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="📌 ยี่ห้อที่มีในร้าน:\nเลือกยี่ห้อที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(quick_buttons)
-                    )
+                carousel = build_brand_list_flex(brands)
+                flex_msg = FlexSendMessage(
+                    alt_text="ยี่ห้อยางที่มีในร้าน",
+                    contents=carousel
                 )
+                nav = TextSendMessage(
+                    text="เลือกจากรายการด้านบน หรือใช้เมนูด่วน",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("🛠️ บริการ", "บริการ"),
+                        ("🎉 โปรโมชัน", "โปรโมชัน"),
+                        ("🏠 เมนูหลัก", "แนะนำ")
+                    ])
+                )
+                line_bot_api.reply_message(reply_token, [flex_msg, nav])
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -507,19 +583,25 @@ def handle_message(event):
         # 4️⃣ แสดงรุ่น
         elif "รุ่น" in text:
             brands = get_all_tire_brands()
-            all_buttons = []
+            all_models = []
             for b in brands:
                 models = get_tire_models_by_brand_id(b['brand_id'])
                 if models:
-                    all_buttons.extend([(m['model_name'], m['model_name']) for m in models])
-            if all_buttons:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="📌 รุ่นยางที่มีในร้าน:\nเลือกรุ่นที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(all_buttons)
-                    )
+                    all_models.extend(models)
+            if all_models:
+                carousel = build_model_list_flex(all_models)
+                flex_msg = FlexSendMessage(
+                    alt_text="รุ่นยางที่มีในร้าน",
+                    contents=carousel
                 )
+                nav = TextSendMessage(
+                    text="เลือกจากรายการด้านบน หรือใช้เมนูด่วน",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("↩️ เลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                        ("🏠 เมนูหลัก", "แนะนำ")
+                    ])
+                )
+                line_bot_api.reply_message(reply_token, [flex_msg, nav])
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -533,16 +615,19 @@ def handle_message(event):
         if brand:
             models = get_tire_models_by_brand_id(brand['brand_id'])
             if models:
-                quick_buttons = [(m['model_name'], m['model_name']) for m in models[:13]]
-                quick_buttons.append(("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"))
-                quick_buttons.append(("🏠 เมนูหลัก", "แนะนำ"))
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text=f"กรุณาเลือกรุ่นยางของ {brand['brand_name']} 🔽",
-                        quick_reply=build_quick_reply_with_extra(quick_buttons)
-                    )
+                carousel = build_model_list_flex(models, brand_name=brand['brand_name'])
+                flex_msg = FlexSendMessage(
+                    alt_text=f"รุ่นยางของ {brand['brand_name']}",
+                    contents=carousel
                 )
+                nav = TextSendMessage(
+                    text="เลือกจากรายการด้านบน หรือใช้เมนูด่วน",
+                    quick_reply=build_quick_reply_with_extra([
+                        ("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"),
+                        ("🏠 เมนูหลัก", "แนะนำ")
+                    ])
+                )
+                line_bot_api.reply_message(reply_token, [flex_msg, nav])
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -661,32 +746,42 @@ def handle_message(event):
         elif text in ["รุ่น", "แบนด์", "ยี่ห้อ"]:
             if text == "รุ่น":
                 brands = get_all_tire_brands()
-                all_buttons = []
+                all_models = []
                 for b in brands:
                     models = get_tire_models_by_brand_id(b['brand_id'])
                     if models:
-                        all_buttons.extend([(m['model_name'], m['model_name']) for m in models[:13]])
-                if all_buttons:
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(
-                            text="📌 รุ่นยางที่มีในร้าน:\nเลือกรุ่นที่คุณสนใจ 🔽",
-                            quick_reply=build_quick_reply_with_extra(all_buttons)
-                        )
+                        all_models.extend(models)
+                if all_models:
+                    carousel = build_model_list_flex(all_models)
+                    flex_msg = FlexSendMessage(
+                        alt_text="รุ่นยางที่มีในร้าน",
+                        contents=carousel
                     )
+                    nav = TextSendMessage(
+                        text="เลือกจากรายการด้านบน หรือใช้เมนูด่วน",
+                        quick_reply=build_quick_reply_with_extra([
+                            ("↩️ เลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                            ("🏠 เมนูหลัก", "แนะนำ")
+                        ])
+                    )
+                    line_bot_api.reply_message(reply_token, [flex_msg, nav])
                 else:
                     line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ"))
             else:  # ยี่ห้อ / แบนด์
                 brands = get_all_tire_brands()
                 if brands:
-                    quick_buttons = [(b['brand_name'], b['brand_name']) for b in brands[:13]]
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(
-                            text="📌 ยี่ห้อที่มีในร้าน:\nเลือกยี่ห้อที่คุณสนใจ 🔽",
-                            quick_reply=build_quick_reply_with_extra(quick_buttons)
-                        )
+                    carousel = build_brand_list_flex(brands)
+                    flex_msg = FlexSendMessage(
+                        alt_text="ยี่ห้อยางที่มีในร้าน",
+                        contents=carousel
                     )
+                    nav = TextSendMessage(
+                        text="เลือกจากรายการด้านบน หรือใช้เมนูด่วน",
+                        quick_reply=build_quick_reply_with_extra([
+                            ("🏠 เมนูหลัก", "แนะนำ")
+                        ])
+                    )
+                    line_bot_api.reply_message(reply_token, [flex_msg, nav])
                 else:
                     line_bot_api.reply_message(reply_token, TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ"))
 
