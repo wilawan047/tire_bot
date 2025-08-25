@@ -564,7 +564,7 @@ def handle_message(event):
             )
 
         # 11️⃣ โปรโมชัน
-        elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
+        elif any(kw in text.lower() for kw in ["โปร", "promotion""โปรโมชั่น",]):
             promotions = get_active_promotions()
             if not promotions:
                 line_bot_api.reply_message(
