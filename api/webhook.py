@@ -325,6 +325,7 @@ def find_brand_in_text(text):
       name_lower = b['brand_name'].lower()
     if name_lower in text_lower or text_lower in name_lower:
         return b  
+    return None
 
 
 def find_model_in_text(text):
@@ -333,8 +334,9 @@ def find_model_in_text(text):
     for b in all_brands:
         models = get_tire_models_by_brand_id(b['brand_id'])
         for m in models:
-            if m['model_name'].lower() in text_lower:
-                return m
+            model_name_lower = m['model_name'].lower()
+        if model_name_lower in text_lower or text_lower in model_name_lower:
+          return m
     return None
 
 def find_promotion_in_text(text):
@@ -454,7 +456,7 @@ def handle_message(event):
                     reply_token,
                     TextSendMessage(
                         text="📌 รุ่นยางที่มีในร้าน:\nเลือกรุ่นที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(all_buttons[:13])
+                        quick_reply=build_quick_reply_with_extra(all_buttons)
                     )
                 )
             else:
