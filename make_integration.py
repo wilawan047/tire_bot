@@ -11,18 +11,16 @@ def forward_to_make(data):
 
     try:
         response = requests.post(url, json=payload, timeout=10)
-        print("Make raw response:", response.text)  # แสดง response เพื่อ debug
+        print("Make raw response:", response.text)  # debug
 
-        if response.status_code == 200:
-            try:
-                # พยายามแปลงเป็น JSON
-                resp_json = response.json()
-                return resp_json.get("text") or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
-            except ValueError:
-                # ถ้าไม่ใช่ JSON
-                print("❌ Make ส่ง response ที่ไม่ใช่ JSON")
-                return "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
-        else:
-            return f"❌ Error {response.status_code} จาก Make"
+        # ถ้าเป็น JSON
+        try:
+            resp_json = response.json()
+            return resp_json.get("text") or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+        except ValueError:
+            # ถ้าไม่ใช่ JSON → ใช้ข้อความตรง ๆ
+            return response.text or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+
     except requests.RequestException as e:
-        return f"❌ ไม่สามารถเชื่อมต่อ Make ได้: {e}"
+        print(f"❌ ไม่สามารถเชื่อมต่อ Make ได้: {e}")
+        return "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
