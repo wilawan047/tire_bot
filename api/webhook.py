@@ -311,7 +311,7 @@ def send_tires_page(reply_token, user_id, back_to="รุ่น"):
         [
             flex_msg,
             TextSendMessage(
-                text=f"แสดงรุ่นที่ {start + 1}-{min(end, len(tires))} จากทั้งหมด {len(tires)} รุ่น",
+                text="คลิกเพื่อเลือกเมนูเพิ่มเติม",
                 quick_reply=build_quick_reply_with_extra(nav_buttons)
             )
         ]
@@ -362,14 +362,11 @@ def handle_message(event):
                 "text": text
             })
 
-            # ถ้า Make ไม่ตอบเลย ก็ไม่ส่งอะไร (หรือสามารถใส่ log แค่แจ้งเตือน)
             if answer_from_make:
-                # ส่งข้อความตอบกลับแบบไม่มี Quick Reply
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(text=answer_from_make)
                 )
-
 
         # 0.1️⃣ ถามเพิ่มเติม → แสดงตัวอย่างคำถาม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
@@ -514,6 +511,32 @@ def handle_message(event):
                     TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
                 )
 
+        # 8️⃣ โปรโมชั่น
+        elif "โปรโมชัน" in text:
+            promotions = get_active_promotions()
+            if promotions:
+                bubbles = [build_promotion_flex(p) for p in promotions[:10]]
+                flex_msg = FlexSendMessage(
+                    alt_text="โปรโมชั่นปัจจุบัน",
+                    contents={"type": "carousel", "contents": bubbles}
+                )
+                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+                line_bot_api.reply_message(
+                    reply_token,
+                    [
+                        flex_msg,
+                        TextSendMessage(
+                            text="เลือกเมนูเพิ่มเติม",
+                            quick_reply=build_quick_reply_with_extra(quick_buttons)
+                        )
+                    ]
+                )
+            else:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ขณะนี้ไม่มีโปรโมชั่นค่ะ 😅")
+                )
+
         # 12️⃣ บริการ
         elif any(kw in text.lower() for kw in ["บริการ", "service", "บริการของร้าน"]):
             service_categories = get_all_service_categories()
@@ -553,32 +576,20 @@ def handle_message(event):
         # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป Make
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม Make")
-            try:
-                answer = forward_to_make({
-                    "replyToken": reply_token,
-                    "userId": user_id,
-                    "text": text
-                }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
-            except Exception as make_err:
-                print("❌ Make ล้มเหลว:", make_err)
-                answer = "ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
+            answer = forward_to_make({
+                "replyToken": reply_token,
+                "userId": user_id,
+                "text": text
+            }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
 
             line_bot_api.reply_message(
                 reply_token,
-                TextSendMessage(
-                    text=answer,
-                    quick_reply=build_quick_reply_with_extra(quick_buttons)
-                )
+                TextSendMessage(text=answer)
             )
 
     except Exception as e:
-        print("❌ Error ใน handle_message:", e)
-        line_bot_api.reply_message(
-            reply_token,
-            TextSendMessage(
-                text="เกิดข้อผิดพลาดบางอย่างค่ะ 😅\nโปรดลองใหม่อีกครั้งนะคะ",
-            )
-        )
+        print("Error in handle_message:", e)
+
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
