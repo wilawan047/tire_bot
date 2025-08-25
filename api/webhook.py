@@ -11,8 +11,6 @@ import config
 from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
 
-
-from chatpdf_integration import forward_to_chatpdf
 from db_queries import (
     get_active_promotions,
     get_all_tire_brands, get_tire_models_by_brand_id,
@@ -58,7 +56,7 @@ def callback():
 
 
 
-import os
+
 from flask import send_from_directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMAGE_DIR = os.path.join(BASE_DIR, 'static', 'images2')
@@ -224,7 +222,7 @@ def build_service_list_flex(category_name, services):
         }
     }
 
-import mysql.connector
+
 
 def get_tire_model_name_by_id(model_id):
     try:
@@ -344,7 +342,7 @@ def handle_message(event):
     user_id = event.source.user_id
 
     try:
-        # 0️⃣ ตัวอย่างคำถาม → ส่งไป Make พร้อม Quick Reply
+        # 0️⃣ คำถามตรงกับตัวอย่าง → ส่งไป Make
         if text in EXAMPLE_QUESTIONS:
             answer_from_make = forward_to_make({
                 "replyToken": reply_token,
@@ -357,8 +355,6 @@ def handle_message(event):
                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
             ]
 
-            print("ตอบกลับ LINE ด้วยข้อความจาก Make:", answer_from_make)
-
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
@@ -366,7 +362,6 @@ def handle_message(event):
                     quick_reply=build_quick_reply_with_extra(quick_buttons)
                 )
             )
-            return
 
         # 0.1️⃣ ถามเพิ่มเติม → แสดงตัวอย่างคำถาม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
@@ -382,14 +377,14 @@ def handle_message(event):
                     quick_reply=build_quick_reply_with_extra([
                         ("🏠 เมนูหลัก", "แนะนำ"),
                         ("🚗 แนะนำยาง", "แนะนำ"),
-                        ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        
                     ])
                 )
             )
             return
 
         # 1️⃣ ทักทาย
-        if any(word in text.lower() for word in ["สวัสดี", "hello", "hi", "หวัดดี"]):
+        elif any(word in text.lower() for word in ["สวัสดี", "hello", "hi", "หวัดดี"]):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
@@ -532,8 +527,11 @@ def handle_message(event):
                     TextSendMessage(
                         text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                         quick_reply=build_quick_reply_with_extra([
-                            ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ("🚗 แนะนำยาง", "แนะนำ"),
+                        ("🛠️ บริการ", "บริการ"),
+                        ("🎉 โปรโมชัน", "โปรโมชัน"),
+                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                        ("📞 ติดต่อร้าน", "ติดต่อร้าน")
                         ])
                     )
                 ]
@@ -545,9 +543,12 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="ติดต่อเราได้ที่ ☎️ 044 611 097",
-                    quick_reply=build_quick_reply_with_extra([
-                        ("🏠 เมนูหลัก", "แนะนำ"),
-                        ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                       quick_reply=build_quick_reply_with_extra([
+                        ("🚗 แนะนำยาง", "แนะนำ"),
+                        ("🛠️ บริการ", "บริการ"),
+                        ("🎉 โปรโมชัน", "โปรโมชัน"),
+                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                        ("📞 ติดต่อร้าน", "ติดต่อร้าน")
                     ])
                 )
             )
@@ -556,15 +557,18 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30",
-                    quick_reply=build_quick_reply_with_extra([
-                        ("🏠 เมนูหลัก", "แนะนำ"),
-                        ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        quick_reply=build_quick_reply_with_extra([
+                        ("🚗 แนะนำยาง", "แนะนำ"),
+                        ("🛠️ บริการ", "บริการ"),
+                        ("🎉 โปรโมชัน", "โปรโมชัน"),
+                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                        ("📞 ติดต่อร้าน", "ติดต่อร้าน")
                     ])
                 )
             )
 
         # 11️⃣ โปรโมชัน
-        elif any(kw in text.lower() for kw in ["โปร", "promotion""โปรโมชั่น",]):
+        elif any(kw in text.lower() for kw in ["โปร", "promotion", "โปรโมชั่น"]):
             promotions = get_active_promotions()
             if not promotions:
                 line_bot_api.reply_message(
@@ -587,7 +591,6 @@ def handle_message(event):
 
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        
         # 12️⃣ บริการ
         elif any(kw in text.lower() for kw in ["บริการ", "service"]):
             service_categories = get_all_service_categories()
@@ -620,30 +623,19 @@ def handle_message(event):
             )
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make fallback
+        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป Make เลย
         else:
-            print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
+            print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม Make")
             try:
-                answer = forward_to_chatpdf({
+                answer = forward_to_make({
                     "replyToken": reply_token,
                     "userId": user_id,
                     "text": text
-                })
-                if not answer:
-                    answer = "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
-            except Exception as chatpdf_err:
-                print("❌ ChatPDF error → fallback ไป Make:", chatpdf_err)
-                try:
-                    answer = forward_to_make({
-                        "replyToken": reply_token,
-                        "userId": user_id,
-                        "text": text
-                    }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
-                except Exception as make_err:
-                    print("❌ Make ก็ล้มเหลว:", make_err)
-                    answer = "ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
+                }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+            except Exception as make_err:
+                print("❌ Make ล้มเหลว:", make_err)
+                answer = "ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
 
-            # ส่งข้อความกลับ LINE พร้อม Quick Reply
             quick_buttons = [
                 ("🏠 เมนูหลัก", "แนะนำ"),
                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
@@ -661,9 +653,10 @@ def handle_message(event):
         line_bot_api.reply_message(
             reply_token,
             TextSendMessage(
-                text="เกิดข้อผิดพลาดในการประมวลผลข้อความค่ะ 😅"
+                text="เกิดข้อผิดพลาดบางอย่างค่ะ 😅\nโปรดลองใหม่อีกครั้งนะคะ",
             )
         )
+
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
