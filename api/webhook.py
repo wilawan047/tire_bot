@@ -318,26 +318,62 @@ def send_tires_page(reply_token, user_id, back_to="รุ่น"):
     )
 
 
+import difflib  # ใช้ช่วยหา similarity
+
 def find_brand_in_text(text):
     text_lower = text.lower()
     brands = get_all_tire_brands()
+
+    best_match = None
+    highest_ratio = 0.0
+
     for b in brands:
-      name_lower = b['brand_name'].lower()
-    if name_lower in text_lower or text_lower in name_lower:
-        return b  
+        name_lower = b['brand_name'].lower()
+
+       
+        if name_lower in text_lower or text_lower in name_lower:
+            return b
+        
+        ratio = difflib.SequenceMatcher(None, text_lower, name_lower).ratio()
+        if ratio > highest_ratio:
+            highest_ratio = ratio
+            best_match = b
+    
+    if highest_ratio > 0.7:
+        return best_match
+
     return None
 
+
+
+import difflib
 
 def find_model_in_text(text):
     text_lower = text.lower()
     all_brands = get_all_tire_brands()
+
+    best_match = None
+    highest_ratio = 0.0
+
     for b in all_brands:
         models = get_tire_models_by_brand_id(b['brand_id'])
         for m in models:
             model_name_lower = m['model_name'].lower()
-        if model_name_lower in text_lower or text_lower in model_name_lower:
-          return m
+
+            if model_name_lower in text_lower or text_lower in model_name_lower:
+                return m
+
+            ratio = difflib.SequenceMatcher(None, text_lower, model_name_lower).ratio()
+            if ratio > highest_ratio:
+                highest_ratio = ratio
+                best_match = m
+
+    
+    if highest_ratio > 0.7:
+        return best_match
+
     return None
+
 
 def find_promotion_in_text(text):
     text_lower = text.lower()
