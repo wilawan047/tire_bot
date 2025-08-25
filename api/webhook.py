@@ -584,6 +584,7 @@ def handle_message(event):
 
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
+        
         # 12️⃣ บริการ
         elif any(kw in text.lower() for kw in ["บริการ", "service"]):
             service_categories = get_all_service_categories()
@@ -616,7 +617,7 @@ def handle_message(event):
             )
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
+        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make fallback
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
@@ -625,27 +626,40 @@ def handle_message(event):
                     "userId": user_id,
                     "text": text
                 })
-                line_bot_api.reply_message(reply_token, TextSendMessage(text=answer))
+                if not answer:
+                    answer = "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
             except Exception as chatpdf_err:
                 print("❌ ChatPDF error → fallback ไป Make:", chatpdf_err)
                 try:
-                    forward_to_make({
+                    answer = forward_to_make({
                         "replyToken": reply_token,
                         "userId": user_id,
                         "text": text
-                    })
+                    }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
                 except Exception as make_err:
                     print("❌ Make ก็ล้มเหลว:", make_err)
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅")
-                    )
+                    answer = "ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅"
+
+            # ส่งข้อความกลับ LINE พร้อม Quick Reply
+            quick_buttons = [
+                ("🏠 เมนูหลัก", "แนะนำ"),
+                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+            ]
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(
+                    text=answer,
+                    quick_reply=build_quick_reply_with_extra(quick_buttons)
+                )
+            )
 
     except Exception as e:
-        print("❌ ERROR:", e)
+        print("❌ Error ใน handle_message:", e)
         line_bot_api.reply_message(
             reply_token,
-            TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
+            TextSendMessage(
+                text="เกิดข้อผิดพลาดในการประมวลผลข้อความค่ะ 😅"
+            )
         )
 
 @handler.add(MessageEvent, message=StickerMessage)
