@@ -373,6 +373,33 @@ def find_model_in_text(text):
         return best_match
 
     return None
+def get_db_connection():
+    try:
+        return mysql.connector.connect(**config.DB_CONFIG)
+    except mysql.connector.Error as err:
+        print(f"❌ Database connection error: {err}")
+        return None
+    
+def get_tire_model_by_name(model_name):
+    """ค้นหารุ่นยางจากชื่อแบบตรงหรือใกล้เคียง"""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT * FROM tire_models
+            WHERE LOWER(model_name) = LOWER(%s)
+               OR LOWER(%s) LIKE CONCAT('%', LOWER(model_name), '%')
+        """
+        cursor.execute(query, (model_name, model_name))
+        return cursor.fetchone()
+    except mysql.connector.Error as err:
+        print(f"Error in get_tire_model_by_name: {err}")
+        return None
+    finally:
+        conn.close()
+
 
 
 def find_promotion_in_text(text):
