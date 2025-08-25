@@ -340,6 +340,45 @@ def handle_message(event):
     user_id = event.source.user_id
 
     try:
+        # 🔟 ตัวอย่างคำถาม (ประกาศด้านบน)
+        example_questions = [
+            QuickReplyButton(action=MessageAction(label="รุ่นยางสำหรับรถเก๋ง", text="รุ่นยางสำหรับรถเก๋ง")),
+            QuickReplyButton(action=MessageAction(label="บริการของร้าน", text="บริการของร้าน")),
+            QuickReplyButton(action=MessageAction(label="โปรโมชั่นเดือนนี้", text="โปรโมชั่นเดือนนี้")),
+        ]
+
+        # 0️⃣ ถามเพิ่มเติม / ตัวอย่างคำถาม
+        if text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(
+                    text="คุณสามารถพิมพ์คำถามอะไรได้เลยค่ะ เช่น:",
+                    quick_reply=QuickReply(items=example_questions)
+                )
+            )
+            return
+
+        # 0.1️⃣ ส่งไป Make หากเลือกตัวอย่างคำถาม
+        elif text in ["รุ่นยางสำหรับรถเก๋ง", "บริการของร้าน", "โปรโมชั่นเดือนนี้"]:
+            # ส่งไป Make แล้วรับข้อความตอบกลับ
+            answer_from_make = forward_to_make(text, reply_token)
+
+            # สร้าง Quick Reply ให้ผู้ใช้เลือกต่อ
+            quick_buttons = [
+                ("🏠 เมนูหลัก", "แนะนำ"),
+                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+            ]
+
+            # ส่งข้อความพร้อม Quick Reply
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(
+                    text=answer_from_make,
+                    quick_reply=build_quick_reply_with_extra(quick_buttons)
+                )
+            )
+            return
+
         # 1️⃣ ทักทาย
         if any(word in text.lower() for word in ["สวัสดี", "hello", "hi", "หวัดดี"]):
             line_bot_api.reply_message(
@@ -516,25 +555,6 @@ def handle_message(event):
                 )
             )
 
-        # 🔟 ตัวอย่างคำถาม
-        example_questions = [
-            QuickReplyButton(action=MessageAction(label="รุ่นยางสำหรับรถเก๋ง", text="รุ่นยางสำหรับรถเก๋ง")),
-            QuickReplyButton(action=MessageAction(label="บริการของร้าน", text="บริการของร้าน")),
-            QuickReplyButton(action=MessageAction(label="โปรโมชั่นเดือนนี้", text="โปรโมชั่นเดือนนี้")),
-        ]
-
-        if text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
-            line_bot_api.reply_message(
-                reply_token,
-                TextSendMessage(
-                    text="คุณสามารถพิมพ์คำถามอะไรได้เลยค่ะ เช่น:",
-                    quickReply=QuickReply(items=example_questions)
-                )
-            )
-
-        elif text in ["รุ่นยางสำหรับรถเก๋ง", "บริการของร้าน", "โปรโมชั่นเดือนนี้"]:
-            forward_to_make(text, reply_token)  # ✅ ส่งไป Make
-
         # 11️⃣ โปรโมชัน
         elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
             promotions = get_active_promotions()
@@ -622,7 +642,6 @@ def handle_message(event):
             reply_token,
             TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
         )
-
 
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
