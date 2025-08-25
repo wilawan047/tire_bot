@@ -266,10 +266,11 @@ def build_promotion_flex(promo):
         }
     }
 
-def send_tires_page(reply_token, user_id):
+def send_tires_page(reply_token, user_id, back_to="รุ่น"):
     if user_id not in user_pages:
         line_bot_api.reply_message(reply_token, TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อน"))
         return
+
     page_size = 10
     page = user_pages[user_id]['page']
     model_id = user_pages[user_id]['model_id']
@@ -288,7 +289,10 @@ def send_tires_page(reply_token, user_id):
 
     bubbles = [build_tire_flex(t, model_name) for t in tires_page]
     carousel = {"type": "carousel", "contents": bubbles}
-    flex_msg = FlexSendMessage(alt_text=f"ข้อมูลยางรุ่นหน้า {page}", contents=carousel)
+    flex_msg = FlexSendMessage(
+        alt_text=f"ข้อมูลยางรุ่นหน้า {page}",
+        contents=carousel
+    )
 
     nav_buttons = []
     if page > 1:
@@ -297,14 +301,20 @@ def send_tires_page(reply_token, user_id):
         nav_buttons.append(("ถัดไป ➡️", f"page_{page + 1}"))
 
     nav_buttons.extend([
-        ("↩️ เลือกรุ่นอื่น", "ยี่ห้อยางรถยนต์"),
+        (f"↩️ เลือก{back_to}อื่น", "ยี่ห้อยางรถยนต์"),
         ("🏠 เมนูหลัก", "แนะนำ"),
     ])
 
-    line_bot_api.reply_message(reply_token, [
-        flex_msg,
-        TextSendMessage(text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม", quick_reply=build_quick_reply_with_extra(nav_buttons))
-    ])
+    line_bot_api.reply_message(
+        reply_token, 
+        [
+            flex_msg,
+            TextSendMessage(
+                text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                quick_reply=build_quick_reply_with_extra(nav_buttons)
+            )
+        ]
+    )
 
 def find_brand_in_text(text):
     text_lower = text.lower()
