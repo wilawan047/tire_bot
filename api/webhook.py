@@ -345,7 +345,10 @@ def handle_message(event):
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
-                    text="สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\nต้องการให้เราช่วยแนะนำยาง หรือสอบถามบริการอื่น ๆ ไหมคะ 👇",
+                    text=(
+                        "สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\n"
+                        "ต้องการให้เราช่วยแนะนำยาง หรือสอบถามบริการอื่น ๆ ไหมคะ 👇"
+                    ),
                     quick_reply=build_quick_reply_with_extra([
                         ("🚗 แนะนำยาง", "แนะนำ"),
                         ("🛠️ บริการ", "บริการ"),
@@ -398,6 +401,7 @@ def handle_message(event):
                 models = get_tire_models_by_brand_id(b['brand_id'])
                 if models:
                     all_buttons.extend([(m['model_name'], m['model_name']) for m in models[:5]])
+
             if all_buttons:
                 line_bot_api.reply_message(
                     reply_token,
@@ -499,6 +503,7 @@ def handle_message(event):
                     ])
                 )
             )
+
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
@@ -511,7 +516,7 @@ def handle_message(event):
                 )
             )
 
-        # 🔟 ถามเพิ่มเติม → ส่งไป Make
+        # 🔟 ถามเพิ่มเติม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
             print("➡️ ส่งไป Make (ถามเพิ่มเติม)")
             try:
@@ -522,10 +527,11 @@ def handle_message(event):
                 })
             except Exception as make_err:
                 print("❌ Make error:", make_err)
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅")
-                )
+
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(text="ขออภัย ไม่สามารถตอบคำถามของคุณได้ในขณะนี้ค่ะ 😅")
+            )
 
         # 11️⃣ โปรโมชัน
         elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
@@ -539,6 +545,7 @@ def handle_message(event):
                 bubbles = [build_promotion_flex(p) for p in promotions[:10]]
                 carousel = {"type": "carousel", "contents": bubbles}
                 flex_msg = FlexSendMessage(alt_text="โปรโมชันล่าสุด", contents=carousel)
+
                 quick_buttons = [
                     ("🏠 เมนูหลัก", "แนะนำ"),
                     ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
@@ -547,6 +554,7 @@ def handle_message(event):
                     text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                     quick_reply=build_quick_reply_with_extra(quick_buttons)
                 )
+
                 line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
         # 12️⃣ บริการ

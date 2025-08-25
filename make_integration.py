@@ -17,7 +17,6 @@ def forward_to_make(data):
     if not user_message:
         user_message = "❗ ไม่มีข้อความจากผู้ใช้"
 
-
     payload = {
         "user_id": data.get("userId", "unknown"),
         "message": user_message
@@ -29,9 +28,14 @@ def forward_to_make(data):
         if response.status_code == 200:
             try:
                 make_data = response.json()
-                reply_text = make_data.get("text", "ไม่พบคำตอบจาก Make ค่ะ")
+                reply_text = make_data.get("text", "").strip()
+                # กรองค่า "Accept" หรือข้อความว่าง
+                if not reply_text or reply_text.lower() == "accept":
+                    reply_text = "ไม่พบคำตอบจาก Make ค่ะ"
             except Exception:
-                reply_text = response.text or "ไม่พบคำตอบจาก Make ค่ะ"
+                reply_text = response.text.strip() or "ไม่พบคำตอบจาก Make ค่ะ"
+                if reply_text.lower() == "accept":
+                    reply_text = "ไม่พบคำตอบจาก Make ค่ะ"
         else:
             reply_text = f"❌ Error {response.status_code} จาก Make"
     except Exception as e:
