@@ -581,19 +581,15 @@ def handle_message(event):
                 "userId": user_id,
                 "text": text
             })
-
             if answer:  # ✅ มีคำตอบจาก Make จริง
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(text=answer)
                 )
-            else:
-                # ❌ ไม่มีคำตอบ ก็ไม่ต้องส่งข้อความ fallback
-                print("⚠️ Make ไม่ตอบอะไรกลับมา")
 
     except Exception as e:
         print("Error in handle_message:", e)
-
+         
 @handler.add(MessageEvent, message=StickerMessage)
 def handle_sticker(event):
     reply_token = event.reply_token

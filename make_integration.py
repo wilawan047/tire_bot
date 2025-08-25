@@ -13,14 +13,17 @@ def forward_to_make(data):
         response = requests.post(url, json=payload, timeout=10)
         print("Make raw response:", response.text)  # debug
 
-        # ถ้าเป็น JSON
         try:
             resp_json = response.json()
-            return resp_json.get("text") or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+            # ✅ ถ้ามี text จริงเท่านั้น
+            if resp_json.get("text"):
+                return resp_json["text"]
+            else:
+                return None  # ไม่มี text → ไม่ตอบอะไร
         except ValueError:
-            # ถ้าไม่ใช่ JSON → ใช้ข้อความตรง ๆ
-            return response.text or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+            # ถ้าไม่ใช่ JSON → ไม่ตอบอะไร
+            return None
 
     except requests.RequestException as e:
         print(f"❌ ไม่สามารถเชื่อมต่อ Make ได้: {e}")
-        return "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+        return None
