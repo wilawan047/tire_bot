@@ -332,8 +332,6 @@ def find_promotion_in_text(text):
             return p
     return None
 
-
-# 🔟 ตัวอย่างคำถาม
 EXAMPLE_QUESTIONS = ["รุ่นยางสำหรับรถเก๋ง", "บริการของร้าน", "โปรโมชั่นเดือนนี้"]
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -343,9 +341,13 @@ def handle_message(event):
     user_id = event.source.user_id
 
     try:
-        # 0️⃣ ถามตัวอย่าง → ส่งไป Make พร้อม Quick Reply เมนูอื่น
+        # 0️⃣ ตัวอย่างคำถาม → ส่งไป Make พร้อม Quick Reply
         if text in EXAMPLE_QUESTIONS:
-            answer_from_make = forward_to_make(text, reply_token)
+            answer_from_make = forward_to_make({
+                "replyToken": reply_token,
+                "userId": user_id,
+                "text": text
+            })
             quick_buttons = [
                 ("🏠 เมนูหลัก", "แนะนำ"),
                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
@@ -359,7 +361,7 @@ def handle_message(event):
             )
             return
 
-        # 0.1️⃣ ถามเพิ่มเติม
+        # 0.1️⃣ ถามเพิ่มเติม → แสดงตัวอย่างคำถาม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
             line_bot_api.reply_message(
                 reply_token,
@@ -536,7 +538,6 @@ def handle_message(event):
                     ])
                 )
             )
-
         elif any(word in text.lower() for word in ["เวลาเปิดทำการ", "เปิด", "ร้านเปิดกี่โมง", "ร้านเปิด"]):
             line_bot_api.reply_message(
                 reply_token,
@@ -605,7 +606,7 @@ def handle_message(event):
             )
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
- # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
+        # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป ChatPDF → Make
         else:
             print("❗️ไม่เข้าเงื่อนไข → ส่งไปถาม ChatPDF")
             try:
