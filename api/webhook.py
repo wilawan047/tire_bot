@@ -271,7 +271,7 @@ def send_tires_page(reply_token, user_id, back_to="รุ่น"):
         line_bot_api.reply_message(reply_token, TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อน"))
         return
 
-    page_size = 10
+    page_size = 10  # LINE carousel รองรับ bubble สูงสุด 10
     page = user_pages[user_id]['page']
     model_id = user_pages[user_id]['model_id']
 
@@ -290,10 +290,11 @@ def send_tires_page(reply_token, user_id, back_to="รุ่น"):
     bubbles = [build_tire_flex(t, model_name) for t in tires_page]
     carousel = {"type": "carousel", "contents": bubbles}
     flex_msg = FlexSendMessage(
-        alt_text=f"ข้อมูลยางรุ่นหน้า {page}",
+        alt_text=f"ข้อมูลยางหน้า {page}",
         contents=carousel
     )
 
+    # Navigation buttons
     nav_buttons = []
     if page > 1:
         nav_buttons.append(("⬅️ ก่อนหน้า", f"page_{page - 1}"))
@@ -310,11 +311,12 @@ def send_tires_page(reply_token, user_id, back_to="รุ่น"):
         [
             flex_msg,
             TextSendMessage(
-                text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                text=f"แสดงรุ่นที่ {start + 1}-{min(end, len(tires))} จากทั้งหมด {len(tires)} รุ่น",
                 quick_reply=build_quick_reply_with_extra(nav_buttons)
             )
         ]
     )
+
 
 def find_brand_in_text(text):
     text_lower = text.lower()
@@ -358,20 +360,22 @@ def handle_message(event):
                 "replyToken": reply_token,
                 "userId": user_id,
                 "text": text
-            }) or "ขณะนี้ยังไม่สามารถตอบได้ค่ะ 😅"
+            })
 
-            quick_buttons = [
-                ("🏠 เมนูหลัก", "แนะนำ"),
-                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-            ]
-
-            line_bot_api.reply_message(
-                reply_token,
-                TextSendMessage(
-                    text=answer_from_make,
-                    quick_reply=build_quick_reply_with_extra(quick_buttons)
+            # ถ้า Make ไม่ตอบเลย ก็ไม่ส่งอะไร (หรือสามารถใส่ log แค่แจ้งเตือน)
+            if answer_from_make:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(
+                        text=answer_from_make,
+                        quick_reply=build_quick_reply_with_extra([
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
                 )
-            )
+
+
 
         # 0.1️⃣ ถามเพิ่มเติม → แสดงตัวอย่างคำถาม
         elif text in ["ถามเพิ่มเติม", "ถามคำถามอื่น"]:
