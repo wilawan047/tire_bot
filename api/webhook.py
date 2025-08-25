@@ -10,6 +10,9 @@ from flask import Flask, request, abort, jsonify, send_from_directory, url_for
 import config
 from make_integration import forward_to_make
 from chatpdf_integration import forward_to_chatpdf
+
+
+from chatpdf_integration import forward_to_chatpdf
 from db_queries import (
     get_active_promotions,
     get_all_tire_brands, get_tire_models_by_brand_id,
