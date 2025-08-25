@@ -322,9 +322,9 @@ def find_brand_in_text(text):
     text_lower = text.lower()
     brands = get_all_tire_brands()
     for b in brands:
-        if b['brand_name'].lower() in text_lower:
-            return b
-    return None
+      name_lower = b['brand_name'].lower()
+    if name_lower in text_lower or text_lower in name_lower:
+        return b  
 
 
 def find_model_in_text(text):
@@ -447,7 +447,7 @@ def handle_message(event):
             for b in brands:
                 models = get_tire_models_by_brand_id(b['brand_id'])
                 if models:
-                    all_buttons.extend([(m['model_name'], m['model_name']) for m in models[:5]])
+                    all_buttons.extend([(m['model_name'], m['model_name']) for m in models])
 
             if all_buttons:
                 line_bot_api.reply_message(
@@ -467,7 +467,7 @@ def handle_message(event):
         elif (brand := find_brand_in_text(text)):
             models = get_tire_models_by_brand_id(brand['brand_id'])
             if models:
-                quick_buttons = [(m['model_name'], m['model_name']) for m in models[:13]]
+                quick_buttons = [(m['model_name'], m['model_name']) for m in models]
                 quick_buttons.append(("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"))
                 quick_buttons.append(("🏠 เมนูหลัก", "แนะนำ"))
 
