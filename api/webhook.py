@@ -528,11 +528,22 @@ def handle_message(event):
                     TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ")
                 )
 
-        # 5️⃣ ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น
+        # 5️⃣ ตรวจสอบชื่อยี่ห้อ → แสดงรุ่น (แบ่งหน้า)
         elif (brand := find_brand_in_text(text)):
             models = get_tire_models_by_brand_id(brand['brand_id'])
             if models:
-                quick_buttons = [(m['model_name'], m['model_name']) for m in models]
+                page = 1
+                page_size = 13
+                user_model_pages[user_id] = {
+                    "brand_id": brand['brand_id'],
+                    "page": page
+                }
+                start = (page - 1) * page_size
+                end = start + page_size
+                models_page = models[start:end]
+                quick_buttons = [(m['model_name'], m['model_name']) for m in models_page]
+                if len(models) > end:
+                    quick_buttons.append(("ดูรุ่นถัดไป ➡️", f"next_model_page_{brand['brand_id']}_{page+1}"))
                 quick_buttons.append(("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"))
                 quick_buttons.append(("🏠 เมนูหลัก", "แนะนำ"))
 
@@ -543,100 +554,87 @@ def handle_message(event):
                         quick_reply=build_quick_reply_with_extra(quick_buttons)
                     )
                 )
-
-        # 6️⃣ ตรวจสอบชื่อรุ่น → แสดง Flex
-        elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
-            tires = get_tires_by_model_id(model['model_id'])
-            if tires:
-                user_pages[user_id] = {'model_id': model['model_id'], 'page': 1}
-                send_tires_page(reply_token, user_id, back_to="รุ่น")
             else:
                 line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(
-                        text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ"
-                    )
+                    TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand['brand_name']} ในระบบ")
                 )
 
-        # 7️⃣ จัดการข้อความ page_2, page_3 ...
-        elif text.startswith("page_"):
-            try:
-                page_num = int(text.split("_")[1])
-                if user_pages.get(user_id):
-                    user_pages[user_id]['page'] = page_num
-                    send_tires_page(reply_token, user_id)
-                else:
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ")
-                    )
-            except Exception as e:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}")
-                )
+        # ✅ เพิ่ม handler สำหรับปุ่ม "ดูรุ่นถัดไป"
+        elif text.startswith("next_model_page_"):
+            _, brand_id, page = text.split("_")[-3:]
+            page = int(page)
+            models = get_tire_models_by_brand_id(int(brand_id))
+            if models:
+                page_size = 13
+                start = (page - 1) * page_size
+                end = start + page_size
+                models_page = models[start:end]
+                quick_buttons = [(m['model_name'], m['model_name']) for m in models_page]
+                if len(models) > end:
+                    quick_buttons.append(("ดูรุ่นถัดไป ➡️", f"next_model_page_{brand_id}_{page+1}"))
+                if page > 1:
+                    quick_buttons.insert(0, ("⬅️ รุ่นก่อนหน้า", f"prev_model_page_{brand_id}_{page-1}"))
+                quick_buttons.append(("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"))
+                quick_buttons.append(("🏠 เมนูหลัก", "แนะนำ"))
 
-        # 8️⃣ โปรโมชั่น
-        elif "โปรโมชัน" in text or "โปร" in text:  
-            promotions = get_active_promotions()
-            if promotions:
-                bubbles = [build_promotion_flex(p) for p in promotions[:10]]
-                flex_msg = FlexSendMessage(
-                    alt_text="โปรโมชั่นปัจจุบัน",
-                    contents={"type": "carousel", "contents": bubbles}
-                )
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-                line_bot_api.reply_message(
-                    reply_token,
-                    [
-                        flex_msg,
-                        TextSendMessage(
-                            text="เลือกเมนูเพิ่มเติม",
-                            quick_reply=build_quick_reply_with_extra(quick_buttons)
-                        )
-                    ]
-                )
-            else:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(text="ขณะนี้ไม่มีโปรโมชั่นค่ะ 😅")
-                )
+                user_model_pages[user_id] = {
+                    "brand_id": int(brand_id),
+                    "page": page
+                }
 
-        # 12️⃣ บริการ
-        elif any(kw in text.lower() for kw in ["บริการ", "service", "บริการของร้าน"]):
-            service_categories = get_all_service_categories()
-            if service_categories:
-                quick_buttons = [(cat['category'], cat['category']) for cat in service_categories[:13]]
-                quick_buttons.append(("↩️ ย้อนกลับ", "แนะนำ"))
+                brand = next((b for b in get_all_tire_brands() if b['brand_id'] == int(brand_id)), None)
+                brand_name = brand['brand_name'] if brand else ""
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(
-                        text="🛠️ บริการของเรา:\nเลือกประเภทบริการที่คุณสนใจ 🔽",
+                        text=f"กรุณาเลือกรุ่นยางของ {brand_name} (หน้า {page}) 🔽",
                         quick_reply=build_quick_reply_with_extra(quick_buttons)
                     )
                 )
             else:
                 line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ")
+                    TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ")
                 )
 
-        # 12.1️⃣ ผู้ใช้เลือกหมวดหมู่บริการ
-        elif (category := get_services_by_category(text)):
-            flex_content = build_service_list_flex(text, category)
-            flex_msg = FlexSendMessage(
-                alt_text=f"บริการหมวด {text}",
-                contents=flex_content
-            )
-            quick_buttons = [
-                ("↩️ ย้อนกลับ", "บริการ"),
-                ("🏠 เมนูหลัก", "แนะนำ")
-            ]
-            quick_reply_msg = TextSendMessage(
-                text="เลือกบริการเพิ่มเติมหรือกลับไปเมนูหลัก",
-                quick_reply=build_quick_reply_with_extra(quick_buttons)
-            )
-            line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
+        # ✅ เพิ่ม handler สำหรับปุ่ม "รุ่นก่อนหน้า"
+        elif text.startswith("prev_model_page_"):
+            _, brand_id, page = text.split("_")[-3:]
+            page = int(page)
+            models = get_tire_models_by_brand_id(int(brand_id))
+            if models:
+                page_size = 13
+                start = (page - 1) * page_size
+                end = start + page_size
+                models_page = models[start:end]
+                quick_buttons = [(m['model_name'], m['model_name']) for m in models_page]
+                if len(models) > end:
+                    quick_buttons.append(("ดูรุ่นถัดไป ➡️", f"next_model_page_{brand_id}_{page+1}"))
+                if page > 1:
+                    quick_buttons.insert(0, ("⬅️ รุ่นก่อนหน้า", f"prev_model_page_{brand_id}_{page-1}"))
+                quick_buttons.append(("↩️ เลือกยี่ห้ออื่น", "ยี่ห้อยางรถยนต์"))
+                quick_buttons.append(("🏠 เมนูหลัก", "แนะนำ"))
+
+                user_model_pages[user_id] = {
+                    "brand_id": int(brand_id),
+                    "page": page
+                }
+
+                brand = next((b for b in get_all_tire_brands() if b['brand_id'] == int(brand_id)), None)
+                brand_name = brand['brand_name'] if brand else ""
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(
+                        text=f"กรุณาเลือกรุ่นยางของ {brand_name} (หน้า {page}) 🔽",
+                        quick_reply=build_quick_reply_with_extra(quick_buttons)
+                    )
+                )
+            else:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ")
+                )
 
         # 13️⃣ ไม่เข้าเงื่อนไข → ส่งไป Make
         else:
