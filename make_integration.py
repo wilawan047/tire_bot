@@ -1,5 +1,3 @@
-# make_integration.py
-import os
 import requests
 
 MAKE_WEBHOOK_URL = "https://hook.eu2.make.com/p5vur0klgafscgd1mq7i8ghiwjm57wn5"
@@ -9,11 +7,15 @@ def forward_to_make(data):
     ส่งข้อความไป Make API และ return ข้อความตอบกลับ (string)
     data: dict {"replyToken": str, "userId": str, "text": str}
     """
-    text = data["text"]
+    text = data.get("text") or ""  # ป้องกัน undefined / None
 
     payload = {
-        "userId": data["userId"],
-        "text": text
+        "messages": [
+            {
+                "role": "user",
+                "content": text
+            }
+        ]
     }
 
     try:
