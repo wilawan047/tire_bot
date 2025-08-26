@@ -134,6 +134,62 @@ def build_quick_reply_with_extra(buttons):
     )
 
 
+def build_selection_list_flex(title_text, option_labels):
+    """สร้าง Flex Bubble ที่มีหัวข้อและปุ่มรายการแบบการ์ด (คล้ายภาพตัวอย่าง)
+    - title_text: ข้อความหัวข้อ
+    - option_labels: list ของข้อความปุ่ม (กดแล้วส่งข้อความเดียวกันกลับมา)
+    """
+    buttons = []
+    for label in option_labels:
+        buttons.append({
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#E9ECF1",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "margin": "md",
+            "action": {
+                "type": "message",
+                "label": label,
+                "text": label,
+            },
+            "contents": [
+                {
+                    "type": "text",
+                    "text": label,
+                    "align": "center",
+                    "color": "#1F2937",
+                    "weight": "bold",
+                }
+            ],
+        })
+
+    bubble = {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": title_text,
+                    "weight": "bold",
+                    "size": "md",
+                    "wrap": True,
+                },
+                {"type": "separator", "margin": "md"},
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "sm",
+                    "contents": buttons,
+                },
+            ],
+        },
+    }
+    return bubble
+
+
 def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
     return {
@@ -227,6 +283,22 @@ def build_service_list_flex(category_name, services):
             "layout": "vertical",
             "spacing": "md",
             "contents": service_items,
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "link",
+                    "action": {
+                        "type": "message",
+                        "label": "↩️ กลับไปเลือกหมวดบริการ",
+                        "text": "บริการ",
+                    },
+                }
+            ],
         },
     }
 
@@ -404,14 +476,9 @@ def handle_message(event):
             set_user_mode(user_id, "menu")
             brands = get_all_tire_brands()
             if brands:
-                quick_buttons = [(b["brand_name"], b["brand_name"]) for b in brands[:13]]
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="📌 ยี่ห้อที่มีในร้าน:\nเลือกยี่ห้อที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(quick_buttons),
-                    ),
-                )
+                labels = [b["brand_name"] for b in brands[:12]]
+                bubble = build_selection_list_flex("📌 เลือกยี่ห้อยางรถยนต์", labels)
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกยี่ห้อยาง", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -425,15 +492,10 @@ def handle_message(event):
             for b in brands:
                 models = get_tire_models_by_brand_id(b["brand_id"])
                 if models:
-                    all_buttons.extend([(m["model_name"], m["model_name"]) for m in models[:5]])
+                    all_buttons.extend([m["model_name"] for m in models[:5]])
             if all_buttons:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="📌 รุ่นยางที่มีในร้าน:\nเลือกรุ่นที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(all_buttons[:13]),
-                    ),
-                )
+                bubble = build_selection_list_flex("📌 เลือกรุ่นยาง", all_buttons[:12])
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกรุ่นยาง", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -444,15 +506,9 @@ def handle_message(event):
             set_user_mode(user_id, "menu")
             models = get_tire_models_by_brand_id(brand["brand_id"])
             if models:
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text=f"กรุณาเลือกรุ่นยางของ {brand['brand_name']} 🔽",
-                        quick_reply=build_quick_reply_with_extra(
-                            [(m["model_name"], m["model_name"]) for m in models[:13]]
-                        ),
-                    ),
-                )
+                labels = [m["model_name"] for m in models[:12]]
+                bubble = build_selection_list_flex(f"📌 เลือกรุ่นยางของ {brand['brand_name']}", labels)
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกรุ่นยาง", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -593,14 +649,9 @@ def handle_message(event):
             set_user_mode(user_id, "menu")
             service_categories = get_all_service_categories()
             if service_categories:
-                quick_buttons = [(cat["category"], cat["category"]) for cat in service_categories[:13]]
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(
-                        text="🛠️ บริการของเรา:\nเลือกประเภทบริการที่คุณสนใจ 🔽",
-                        quick_reply=build_quick_reply_with_extra(quick_buttons),
-                    ),
-                )
+                labels = [cat["category"] for cat in service_categories[:12]]
+                bubble = build_selection_list_flex("🛠️ เลือกประเภทบริการ", labels)
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกประเภทบริการ", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
