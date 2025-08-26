@@ -134,7 +134,7 @@ def build_quick_reply_with_extra(buttons):
     )
 
 
-def build_tire_flex(tire, model_name, brand_name):
+def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
     return {
         "type": "bubble",
@@ -150,25 +150,12 @@ def build_tire_flex(tire, model_name, brand_name):
             "layout": "vertical",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "spacing": "sm",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": (brand_name or "-").upper(),
-                            "size": "sm",
-                            "color": "#888888",
-                            "weight": "bold",
-                        },
-                        {
-                            "type": "text",
-                            "text": model_name or "ไม่ทราบรุ่น",
-                            "weight": "bold",
-                            "size": "xl",
-                            "wrap": True,
-                        },
-                    ],
+                    "type": "text",
+                    "text": model_name or "ไม่ทราบรุ่น",
+                    "weight": "bold",
+                    "size": "xl",
+                    "wrap": True,
+                    "color": "#0B4F6C",
                 },
                 {"type": "separator", "margin": "md"},
                 {
@@ -314,9 +301,8 @@ def send_tires_page(reply_token, user_id):
 
     tire_model = get_tire_model_name_by_id(model_id)
     model_name = tire_model.get("model_name", "Unknown Model")
-    brand_name = tire_model.get("brand_name", "Unknown Brand")
 
-    bubbles = [build_tire_flex(t, model_name, brand_name) for t in tires_page]
+    bubbles = [build_tire_flex(t, model_name) for t in tires_page]
     carousel = {"type": "carousel", "contents": bubbles}
     flex_msg = FlexSendMessage(alt_text=f"ข้อมูลยางรุ่นหน้า {page}", contents=carousel)
 
@@ -633,39 +619,37 @@ def handle_message(event):
             line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
         else:
-            # Only allow free-text QA when user explicitly chose it
-            mode = user_pages.get(user_id, {}).get("mode")
-            if mode == "free_text":
-                print("❗️free_text mode → ส่งไปถาม ChatPDF")
-                try:
-                    answer = forward_to_chatpdf({
-                        "replyToken": reply_token,
-                        "userId": user_id,
-                        "text": text,
-                    })
-                    if answer:
-                        line_bot_api.reply_message(reply_token, TextSendMessage(text=answer))
-                    else:
-                        # If ChatPDF returns empty, try Make but only return if there is text
-                        make_answer = forward_to_make({
-                            "replyToken": reply_token,
-                            "userId": user_id,
-                            "text": text,
-                        })
-                        if make_answer:
-                            line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
-                        else:
-                            line_bot_api.reply_message(reply_token, TextSendMessage(text="ขออภัย ยังไม่มีคำตอบสำหรับคำถามนี้ค่ะ"))
-                except Exception as qa_err:
-                    print("❌ QA error:", qa_err)
-                    line_bot_api.reply_message(reply_token, TextSendMessage(text="ขออภัย ระบบถามตอบขัดข้องชั่วคราวค่ะ"))
-            else:
-                # Not in free text mode → show main menu again
+            # Fallback: not matched any quick-reply flow → ask Make
+            try:
+                make_answer = forward_to_make({
+                    "replyToken": reply_token,
+                    "userId": user_id,
+                    "text": text,
+                })
+                if make_answer:
+                    line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                else:
+                    set_user_mode(user_id, "menu")
+                    line_bot_api.reply_message(
+                        reply_token,
+                        TextSendMessage(
+                            text="ขออภัย ตอนนี้ยังไม่มีคำตอบสำหรับคำถามนี้ค่ะ",
+                            quick_reply=build_quick_reply_with_extra([
+                                ("🚗 แนะนำยาง", "แนะนำ"),
+                                ("🛠️ บริการ", "บริการ"),
+                                ("🎉 โปรโมชัน", "โปรโมชัน"),
+                                ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                                ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
+                            ]),
+                        ),
+                    )
+            except Exception as make_err:
+                print("❌ Make error:", make_err)
                 set_user_mode(user_id, "menu")
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(
-                        text="คลิกเมนูด้านล่างเพื่อเริ่มต้นค่ะ",
+                        text="ขออภัย ระบบตอบกลับขัดข้องชั่วคราวค่ะ",
                         quick_reply=build_quick_reply_with_extra([
                             ("🚗 แนะนำยาง", "แนะนำ"),
                             ("🛠️ บริการ", "บริการ"),
