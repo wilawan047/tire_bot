@@ -118,20 +118,41 @@ def get_image_url(filename):
     return url
 
 
-def build_quick_reply_buttons(buttons):
+def build_quick_reply(buttons):
+    """สร้าง Quick Reply ตามปุ่มที่ส่งมา"""
     return QuickReply(
         items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
     )
 
 
 def build_quick_reply_with_extra(buttons):
-    """เพิ่มปุ่ม ❓ ถามคำถามอื่น ให้ทุกเมนูอัตโนมัติ และย้ายมาไว้หน้าสุด"""
+    """เหมือน build_quick_reply แต่บังคับเพิ่มปุ่ม ❓ ถามคำถามอื่น ไว้หน้าสุด"""
     extra_button = ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-    if extra_button not in buttons:
-        buttons.insert(0, extra_button)
-    return QuickReply(
-        items=[QuickReplyButton(action=MessageAction(label=label, text=text)) for label, text in buttons]
-    )
+    # หา index ของปุ่มเมนูหลัก (โดยดูจาก text == "แนะนำ" หรือ label มีคำว่า เมนูหลัก)
+    main_menu_idx = None
+    for idx, (label, text) in enumerate(buttons):
+        if text == "แนะนำ" or ("เมนูหลัก" in str(label)):
+            main_menu_idx = idx
+            break
+
+    # ถ้ามีปุ่ม "ถามเพิ่มเติม" อยู่แล้ว ให้ย้ายให้อยู่ก่อนหน้าเมนูหลัก
+    if extra_button in buttons:
+        if main_menu_idx is not None:
+            # ลบตำแหน่งเดิมก่อน แล้วแทรกใหม่ก่อนหน้าเมนูหลัก
+            buttons.remove(extra_button)
+            buttons.insert(main_menu_idx, extra_button)
+        else:
+            # ไม่มีเมนูหลัก -> ให้ปุ่มนี้อยู่หน้าสุด
+            buttons.remove(extra_button)
+            buttons.insert(0, extra_button)
+    else:
+        # ยังไม่มีปุ่ม -> เพิ่มเข้าไปก่อนหน้าเมนูหลัก ถ้ามี; ไม่งั้นเพิ่มไว้หน้าสุด
+        if main_menu_idx is not None:
+            buttons.insert(main_menu_idx, extra_button)
+        else:
+            buttons.insert(0, extra_button)
+
+    return build_quick_reply(buttons)
 
 
 def build_selection_list_flex(title_text, option_labels):
@@ -382,7 +403,7 @@ def send_tires_page(reply_token, user_id):
     if page > 1:
         nav_buttons.append(("⬅️ ก่อนหน้า", f"page_{page - 1}"))
     if end < len(tires):
-        nav_buttons.append(("ถัดไป ➡️", f"page_{page + 1}"))
+        nav_buttons.append(("ยางรุ่นที่เลือกหน้าถัดไป ➡️", f"page_{page + 1}"))
 
     nav_buttons.extend([
         ("↩️ เลือกรุ่นอื่น", "ยี่ห้อยางรถยนต์"),
@@ -435,17 +456,49 @@ def handle_message(event):
     text = event.message.text.strip()
     reply_token = event.reply_token
     user_id = event.source.user_id
+    mode = user_pages.get(user_id, {}).get("mode", "menu")
 
     try:
+        # In free_text mode, forward to Make unless user types a known navigation command
+        if mode == "free_text":
+            navigation_triggers = [
+                "แนะนำ",
+                "ยี่ห้อ",
+                "รุ่น",
+                "ร้านอยู่ไหน",
+                "ติดต่อ",
+                "ติดต่อร้าน",
+                "ติดต่อร้านยาง",
+                "ติดต่อเรา",
+                "เบอร์โทร",
+                "โทรศัพท์",
+                "เวลาเปิดทำการ",
+                "บริการ",
+                "โปร",
+                "promotion",
+                "โปรโมชัน",
+                "service",
+                "เมนูหลัก",
+            ]
+            if not any(trigger in text for trigger in navigation_triggers):
+                try:
+                    make_answer = forward_to_make({
+                        "replyToken": reply_token,
+                        "userId": user_id,
+                        "text": text,
+                    })
+                    if make_answer:
+                        line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                except Exception as make_err:
+                    print("❌ Make error:", make_err)
+                return
+
         if any(word in text.lower() for word in ["สวัสดี", "hello", "hi", "หวัดดี"]):
             set_user_mode(user_id, "menu")
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
-                    text=(
-                        "สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\n"
-                        "ต้องการให้เราช่วยแนะนำยาง หรือสอบถามบริการอื่น ๆ ไหมคะ 👇"
-                    ),
+                    text="สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\nต้องการให้ช่วยเรื่องอะไรดีคะ ",
                     quick_reply=build_quick_reply_with_extra([
                         ("🚗 แนะนำยาง", "แนะนำ"),
                         ("🛠️ บริการ", "บริการ"),
@@ -456,12 +509,53 @@ def handle_message(event):
                 ),
             )
 
+        # --- 3) ถามรุ่นยางทั้งหมด ---
+        elif re.search(r"(มียางรุ่น(ไหน|อะไร)บ้าง|รุ่นอะไรบ้าง|เลือกรุ่น)", text):
+            set_user_mode(user_id, "menu")
+            brands = get_all_tire_brands()
+            all_models = []
+            for b in brands:
+                models = get_tire_models_by_brand_id(b["brand_id"])
+                if models:
+                    all_models.extend([m["model_name"] for m in models])
+
+            if all_models:
+                bubble = build_selection_list_flex("📌 เลือกรุ่นยาง", all_models[:12])
+                line_bot_api.reply_message(
+                    reply_token,
+                    FlexSendMessage(
+                        alt_text="เลือกรุ่นยาง",
+                        contents=bubble
+                    )
+                )
+            else:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ")
+                )
+        # --- 4) ถามหายางที่เหมาะกับรถ (ส่งไป Make) ---
+        elif re.search(r"(ยางที่เหมาะ|ยางรุ่นไหนเหมาะ|แนะนำยาง.*รถ|ยาง.*รถรุ่น)", text.lower()):
+            try:
+                make_answer = forward_to_make({
+                    "replyToken": reply_token,
+                    "userId": user_id,
+                    "text": text,
+                })
+                if make_answer:
+                    line_bot_api.reply_message(
+                        reply_token,
+                        TextSendMessage(text=make_answer)
+                    )
+            except Exception as make_err:
+                print("❌ Make error:", make_err)
+            return
+
         elif any(kw in text.lower() for kw in ["แนะนำ", "แนะนำยาง", "แนะนำหน่อย"]):
             set_user_mode(user_id, "menu")
             line_bot_api.reply_message(
                 reply_token,
                 TextSendMessage(
-                    text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                    text="เลือกเมนูที่ต้องการได้เลยค่ะ ",
                     quick_reply=build_quick_reply_with_extra([
                         ("🚗 ยี่ห้อยางรถยนต์", "ยี่ห้อยางรถยนต์"),
                         ("🛠️ บริการ", "บริการ"),
@@ -472,13 +566,13 @@ def handle_message(event):
                 ),
             )
 
-        elif any(kw in text for kw in ["ยี่ห้อ", "แบนด์"]):
+        elif "ยี่ห้อยาง" in text:
             set_user_mode(user_id, "menu")
             brands = get_all_tire_brands()
             if brands:
                 labels = [b["brand_name"] for b in brands[:12]]
-                bubble = build_selection_list_flex("📌 เลือกยี่ห้อยางรถยนต์", labels)
-                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกยี่ห้อยาง", contents=bubble))
+                bubble = build_selection_list_flex("📌 เลือกยี่ห้อยาง", labels)
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกรุ่นยี่ห้อ", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
@@ -626,7 +720,8 @@ def handle_message(event):
                 ),
             )
 
-        elif any(kw in text.lower() for kw in ["โปร", "promotion"]):
+        # --- 7) เมนู "โปรโมชัน" ---
+        elif "โปร" in text or "promotion" in text.lower() or "โปรโมชัน" in text:
             set_user_mode(user_id, "menu")
             promotions = get_active_promotions()
             if not promotions:
@@ -637,21 +732,18 @@ def handle_message(event):
             else:
                 bubbles = [build_promotion_flex(p) for p in promotions[:10]]
                 carousel = {"type": "carousel", "contents": bubbles}
-                flex_msg = FlexSendMessage(alt_text="โปรโมชันล่าสุด", contents=carousel)
-                quick_buttons = [("🏠 เมนูหลัก", "แนะนำ"), ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
-                quick_reply_msg = TextSendMessage(
-                    text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                    quick_reply=build_quick_reply_with_extra(quick_buttons),
+                line_bot_api.reply_message(
+                    reply_token,
+                    FlexSendMessage(alt_text="โปรโมชัน", contents=carousel),
                 )
-                line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
-        elif any(kw in text.lower() for kw in ["บริการ", "service"]):
+        # --- 8) เมนู "บริการ" ---
+        elif "บริการ" in text.lower() or "service" in text.lower():
             set_user_mode(user_id, "menu")
             service_categories = get_all_service_categories()
             if service_categories:
-                labels = [cat["category"] for cat in service_categories[:12]]
-                bubble = build_selection_list_flex("🛠️ เลือกประเภทบริการ", labels)
-                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกประเภทบริการ", contents=bubble))
+                bubble = build_selection_list_flex("🛠️ เลือกบริการ", [cat["category"] for cat in service_categories[:12]])
+                line_bot_api.reply_message(reply_token, FlexSendMessage(alt_text="เลือกบริการ", contents=bubble))
             else:
                 line_bot_api.reply_message(
                     reply_token,
