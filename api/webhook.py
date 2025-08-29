@@ -102,12 +102,17 @@ def file_exists(filename):
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
 
-    if not filename or not file_exists(filename):
+    # Try to resolve filename robustly (case/space/extension differences)
+    resolved = resolve_image_filename(filename) if filename else None
+    if not resolved:
         print(f"❌ File missing: {filename}, ใช้ fallback image")
         fallback_file = "default-tire.jpg"
         if not file_exists(fallback_file):
             return "https://via.placeholder.com/400x300?text=No+Image"
-        filename = fallback_file
+        resolved = fallback_file
+    elif resolved != filename:
+        print(f"ℹ️ Resolved image filename: '{filename}' -> '{resolved}'")
+    filename = resolved
 
     if not base_url:
         url = f"/static/images2/{quote(filename)}"
@@ -116,6 +121,49 @@ def get_image_url(filename):
 
     print("URL ที่ถูกสร้าง:", url)
     return url
+
+
+def resolve_image_filename(filename):
+    try:
+        if not filename:
+            return None
+        base_dir = os.path.join("static", "images2")
+        exact_path = os.path.join(base_dir, filename)
+        if os.path.isfile(exact_path):
+            return filename
+
+        # Case-insensitive exact match
+        files = os.listdir(base_dir)
+        lower_target = filename.lower()
+        for f in files:
+            if f.lower() == lower_target:
+                return f
+
+        # Match by basename ignoring extension differences
+        name_no_ext, _ = os.path.splitext(filename)
+        allowed_exts = {".png", ".jpg", ".jpeg", ".webp"}
+        for f in files:
+            f_name, f_ext = os.path.splitext(f)
+            if f_name.lower() == name_no_ext.lower() and f_ext.lower() in allowed_exts:
+                return f
+
+        # Try space/underscore variants
+        variants = set()
+        variants.add(filename.replace(" ", "_"))
+        variants.add(filename.replace("_", " "))
+        variants.add(filename.replace(" ", ""))
+        for v in list(variants):
+            # also try extension-agnostic match for variants
+            v_lower = v.lower()
+            for f in files:
+                if f.lower() == v_lower:
+                    return f
+                f_name, _ = os.path.splitext(f)
+                if f_name.lower() == os.path.splitext(v)[0].lower():
+                    return f
+    except Exception as e:
+        print("resolve_image_filename error:", e)
+    return None
 
 
 def build_quick_reply(buttons):
