@@ -261,6 +261,11 @@ def build_selection_list_flex(title_text, option_labels):
 
 def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
+
+    # สร้างลิงก์ไปหน้ารวมยี่ห้อ
+    brand_name_url = tire.get("brand_name", "").replace(" ", "_").lower()
+    link_url = f"https://tireweb1.onrender.com/tires/{brand_name_url}"
+
     return {
         "type": "bubble",
         "hero": {
@@ -269,6 +274,10 @@ def build_tire_flex(tire, model_name):
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit",
+            "action": {  # ทำให้กดรูปแล้วเปิดเว็บ
+                "type": "uri",
+                "uri": link_url
+            }
         },
         "body": {
             "type": "box",
