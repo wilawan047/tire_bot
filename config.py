@@ -1,16 +1,15 @@
-# config.py
 import os
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 
 # ข้อมูลการเชื่อมต่อฐานข้อมูล
 DB_CONFIG = {
-   "host": os.environ.get("MYSQL_HOST", "mysql.railway.internal"),
+    "host": os.environ.get("MYSQL_HOST"),
     "port": int(os.environ.get("MYSQL_PORT", 3306)),
-    "user": os.environ.get("MYSQL_USER", "root"),
-    "password": os.environ.get("MYSQL_PASSWORD", "fzqPryLRlGdCOLAVZeXoxmikHelGJPBk"),
-    "database": os.environ.get("MYSQL_DATABASE", "railway")
+    "user": os.environ.get("MYSQL_USER"),
+    "password": os.environ.get("MYSQL_PASSWORD"),
+    "database": os.environ.get("MYSQL_DATABASE"),
 }
 
 # Line Bot API
