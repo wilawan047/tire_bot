@@ -12,9 +12,9 @@ load_dotenv()  # โหลด .env ถ้าอยู่ local
 
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "mysql.railway.internal"),
-    "port": int(os.environ.get("DB_PORT", 3306)),  # ต้องใช้ port จริงจาก Railway
+    "port": int(os.environ.get("DB_PORT", 3306)),
     "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", ""),
+    "password": os.environ.get("DB_PASSWORD"),  # ไม่ต้องใส่ default เป็น ""
     "database": os.environ.get("DB_DATABASE", "railway"),
 }
 
