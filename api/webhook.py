@@ -77,12 +77,11 @@ def callback():
         return "Error", 500
     return "OK", 200
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGE_DIR = os.path.join(BASE_DIR, "static", "uploads", "tires")
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMAGE_DIR = os.path.join(BASE_DIR, "static", "images2")
 
-
-@app.route("/static/images2/<path:filename>")
+@app.route("/static/uploads/tires/<path:filename>")
 def custom_static(filename):
     print("Serving:", os.path.join(IMAGE_DIR, filename))
     return send_from_directory(IMAGE_DIR, filename)
@@ -96,13 +95,12 @@ def home():
 def file_exists(filename):
     if not filename:
         return False
-    return os.path.isfile(os.path.join("static/images2", filename))
+    return os.path.isfile(os.path.join("static", "uploads", "tires", filename))
 
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
 
-    # Try to resolve filename robustly (case/space/extension differences)
     resolved = resolve_image_filename(filename) if filename else None
     if not resolved:
         print(f"❌ File missing: {filename}, ใช้ fallback image")
@@ -115,9 +113,9 @@ def get_image_url(filename):
     filename = resolved
 
     if not base_url:
-        url = f"/static/images2/{quote(filename)}"
+        url = f"/static/uploads/tires/{quote(filename)}"
     else:
-        url = f"{base_url}/static/images2/{quote(filename)}"
+        url = f"{base_url}/static/uploads/tires/{quote(filename)}"
 
     print("URL ที่ถูกสร้าง:", url)
     return url
@@ -127,19 +125,17 @@ def resolve_image_filename(filename):
     try:
         if not filename:
             return None
-        base_dir = os.path.join("static", "images2")
+        base_dir = os.path.join("static", "uploads", "tires")
         exact_path = os.path.join(base_dir, filename)
         if os.path.isfile(exact_path):
             return filename
 
-        # Case-insensitive exact match
         files = os.listdir(base_dir)
         lower_target = filename.lower()
         for f in files:
             if f.lower() == lower_target:
                 return f
 
-        # Match by basename ignoring extension differences
         name_no_ext, _ = os.path.splitext(filename)
         allowed_exts = {".png", ".jpg", ".jpeg", ".webp"}
         for f in files:
@@ -147,13 +143,11 @@ def resolve_image_filename(filename):
             if f_name.lower() == name_no_ext.lower() and f_ext.lower() in allowed_exts:
                 return f
 
-        # Try space/underscore variants
         variants = set()
         variants.add(filename.replace(" ", "_"))
         variants.add(filename.replace("_", " "))
         variants.add(filename.replace(" ", ""))
         for v in list(variants):
-            # also try extension-agnostic match for variants
             v_lower = v.lower()
             for f in files:
                 if f.lower() == v_lower:
