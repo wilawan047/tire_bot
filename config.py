@@ -4,12 +4,13 @@ from dotenv import load_dotenv
 # โหลด environment variables จาก .env ถ้ามี
 load_dotenv()
 
+# config.py
 DB_CONFIG = {
-    "host": os.environ["DB_HOST"],
-    "port": int(os.environ["DB_PORT"]),
-    "user": os.environ["DB_USER"],
-    "password": os.environ["DB_PASSWORD"],
-    "database": os.environ["DB_NAME"],
+    "host": os.environ.get("DB_HOST"),
+    "port": int(os.environ.get("DB_PORT")),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "database": os.environ.get("DB_DATABASE"),  # <- แก้ตรงนี้
 }
 
 # LINE Bot Token & Secret
