@@ -259,11 +259,11 @@ def build_selection_list_flex(title_text, option_labels):
     return bubble
 
 
-def build_tire_flex(tire, model_name):
+def build_tire_flex(tire, model_name, brand_name):
     image_url = get_image_url(tire.get("tire_image_url"))
 
-    # สร้างลิงก์ไปหน้ารวมยี่ห้อ
-    brand_name_url = tire.get("brand_name", "").replace(" ", "_").lower()
+    # ใช้ brand_name ที่ส่งเข้ามา ไม่ใช้จาก tire
+    brand_name_url = (brand_name or "").replace(" ", "_").lower()
     link_url = f"https://tireweb1.onrender.com/tires/{brand_name_url}"
 
     return {
@@ -274,7 +274,7 @@ def build_tire_flex(tire, model_name):
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit",
-            "action": {  # ทำให้กดรูปแล้วเปิดเว็บ
+            "action": {
                 "type": "uri",
                 "uri": link_url
             }
@@ -451,8 +451,10 @@ def send_tires_page(reply_token, user_id):
 
     tire_model = get_tire_model_name_by_id(model_id)
     model_name = tire_model.get("model_name", "Unknown Model")
+    brand_name = tire_model.get("brand_name", "")
 
-    bubbles = [build_tire_flex(t, model_name) for t in tires_page]
+    # ส่ง brand_name เข้าไปด้วย
+    bubbles = [build_tire_flex(t, model_name, brand_name) for t in tires_page]
     carousel = {"type": "carousel", "contents": bubbles}
     flex_msg = FlexSendMessage(alt_text=f"ข้อมูลยางรุ่นหน้า {page}", contents=carousel)
 
@@ -856,7 +858,7 @@ def handle_sticker(event):
                     ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
                     ("🛠️ บริการ", "บริการ"),
                     ("🎉 โปรโมชัน", "โปรโมชัน"),
-                    ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
+                    ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ที่ไหน"),
                     ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
                 ]
             ),
