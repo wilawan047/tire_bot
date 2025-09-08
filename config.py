@@ -5,13 +5,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # config.py
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # โหลด .env ถ้าอยู่ local
+
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST"),
-    "port": int(os.environ.get("DB_PORT")),
-    "user": os.environ.get("DB_USER"),
-    "password": os.environ.get("DB_PASSWORD"),
-    "database": os.environ.get("DB_DATABASE"),  # <- แก้ตรงนี้
+    "host": os.environ.get("DB_HOST", "mysql.railway.internal"),
+    "port": int(os.environ.get("DB_PORT", 3306)),  # ใช้ 3306 เป็น default ถ้าไม่เจอ
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", ""),
+    "database": os.environ.get("DB_DATABASE", "railway"),
 }
+
+print("Connecting to MySQL:", DB_CONFIG)
 
 # LINE Bot Token & Secret
 LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
