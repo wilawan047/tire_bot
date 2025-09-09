@@ -258,7 +258,7 @@ def build_tire_flex(tire, model_name, brand_name):
 
     # ใช้ brand_name ที่ส่งเข้ามา ไม่ใช้จาก tire
     brand_name_url = (brand_name or "").replace(" ", "_").lower()
-    link_url = f"https://tireweb1.onrender.com/tires/{brand_name_url}"
+    link_url = f"https://webtire-production.up.railway.app/tires/{brand_name_url}"
 
     return {
         "type": "bubble",
