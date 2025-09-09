@@ -257,7 +257,7 @@ def build_selection_list_flex(title_text, option_labels):
 def build_tire_flex(tire, model_name, brand_name):
     image_url = get_image_url(tire.get("tire_image_url"))
 
-    # ใช้ brand_name ที่ส่งเข้ามา ไม่ใช้จาก tire
+    # สร้าง link ของแบรนด์
     brand_name_url = (brand_name or "").replace(" ", "_").lower()
     link_url = f"https://webtire-production.up.railway.app/tires/{brand_name_url}"
 
@@ -304,7 +304,24 @@ def build_tire_flex(tire, model_name, brand_name):
                 },
             ],
         },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "action": {
+                        "type": "uri",
+                        "label": f"ดูยาง {brand_name}",
+                        "uri": link_url
+                    }
+                }
+            ]
+        }
     }
+
 
 
 def build_service_list_flex(category_name, services):
