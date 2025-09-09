@@ -1,23 +1,15 @@
 import os
 from dotenv import load_dotenv
 
-# โหลด environment variables จาก .env ถ้ามี
-load_dotenv()
-
-# config.py
-import os
-from dotenv import load_dotenv
-
-load_dotenv()  # โหลด .env ถ้าอยู่ local
+load_dotenv()  # โหลดจาก .env ถ้า run local
 
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "mysql.railway.internal"),
-    "port": int(os.environ.get("DB_PORT", 3306)),
-    "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD"),  # ไม่ต้องใส่ default เป็น ""
-    "database": os.environ.get("DB_DATABASE", "railway"),
+    "host": os.environ.get("MYSQL_HOST", "mysql.railway.internal"),
+    "port": int(os.environ.get("MYSQL_PORT", 3306)),
+    "user": os.environ.get("MYSQL_USER", "root"),
+    "password": os.environ.get("MYSQL_PASSWORD"),
+    "database": os.environ.get("MYSQL_DATABASE", "railway"),
 }
-
 
 print("Connecting to MySQL:", DB_CONFIG)
 
