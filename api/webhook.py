@@ -77,8 +77,10 @@ def callback():
         return "Error", 500
     return "OK", 200
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGE_DIR = os.path.join(BASE_DIR, "static", "uploads", "tires")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # api/
+ROOT_DIR = os.path.dirname(BASE_DIR)                  # /app
+IMAGE_DIR = os.path.join(ROOT_DIR, "static", "uploads", "tires")
 
 
 @app.route("/static/uploads/tires/<path:filename>")
@@ -95,7 +97,7 @@ def home():
 def file_exists(filename):
     if not filename:
         return False
-    return os.path.isfile(os.path.join("static", "uploads", "tires", filename))
+    return os.path.isfile(os.path.join(IMAGE_DIR, filename))
 
 
 def get_image_url(filename):
@@ -125,12 +127,12 @@ def resolve_image_filename(filename):
     try:
         if not filename:
             return None
-        base_dir = os.path.join("static", "uploads", "tires")
-        exact_path = os.path.join(base_dir, filename)
+
+        exact_path = os.path.join(IMAGE_DIR, filename)
         if os.path.isfile(exact_path):
             return filename
 
-        files = os.listdir(base_dir)
+        files = os.listdir(IMAGE_DIR)
         lower_target = filename.lower()
         for f in files:
             if f.lower() == lower_target:
@@ -158,7 +160,6 @@ def resolve_image_filename(filename):
     except Exception as e:
         print("resolve_image_filename error:", e)
     return None
-
 
 def build_quick_reply(buttons):
     """สร้าง Quick Reply ตามปุ่มที่ส่งมา"""
