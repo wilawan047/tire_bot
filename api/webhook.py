@@ -85,17 +85,9 @@ IMAGE_DIR = os.path.join(BASE_DIR, "static", "images2")
 # เส้นทางสำหรับรูปใน uploads/tires
 @app.route("/static/uploads/tires/<path:filename>")
 def tires_static(filename):
-    tire_dir = os.path.join("static", "uploads", "tires")
-    file_path = os.path.join(tire_dir, filename)
-
-    if os.path.isfile(file_path):
-        return send_from_directory(tire_dir, filename)
-    else:
-        # fallback default
-        fallback = os.path.join(tire_dir, "default-tire.jpg")
-        if os.path.isfile(fallback):
-            return send_from_directory(tire_dir, "default-tire.jpg")
-        return "No Image Found", 404
+    tire_dir = os.path.join(BASE_DIR, "static", "uploads", "tires")
+    print("Serving tire image:", os.path.join(tire_dir, filename))
+    return send_from_directory(tire_dir, filename)
 
 
 @app.route("/", methods=["GET", "POST"])
