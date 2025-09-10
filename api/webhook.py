@@ -78,12 +78,11 @@ def callback():
     return "OK", 200
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # api/
-ROOT_DIR = os.path.dirname(BASE_DIR)                  # /app
-IMAGE_DIR = os.path.join(ROOT_DIR, "static", "uploads", "tires")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGE_DIR = os.path.join(BASE_DIR, "static", "images2")
 
 
-@app.route("/static/uploads/tires/<path:filename>")
+@app.route("/static/images2/<path:filename>")
 def custom_static(filename):
     print("Serving:", os.path.join(IMAGE_DIR, filename))
     return send_from_directory(IMAGE_DIR, filename)
@@ -97,69 +96,27 @@ def home():
 def file_exists(filename):
     if not filename:
         return False
-    return os.path.isfile(os.path.join(IMAGE_DIR, filename))
+    return os.path.isfile(os.path.join("static/images2", filename))
 
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
 
-    resolved = resolve_image_filename(filename) if filename else None
-    if not resolved:
+    if not filename or not file_exists(filename):
         print(f"❌ File missing: {filename}, ใช้ fallback image")
         fallback_file = "default-tire.jpg"
         if not file_exists(fallback_file):
             return "https://via.placeholder.com/400x300?text=No+Image"
-        resolved = fallback_file
-    elif resolved != filename:
-        print(f"ℹ️ Resolved image filename: '{filename}' -> '{resolved}'")
-    filename = resolved
+        filename = fallback_file
 
     if not base_url:
-        url = f"/static/uploads/tires/{quote(filename)}"
+        url = f"/static/images2/{quote(filename)}"
     else:
-        url = f"{base_url}/static/uploads/tires/{quote(filename)}"
+        url = f"{base_url}/static/images2/{quote(filename)}"
 
     print("URL ที่ถูกสร้าง:", url)
     return url
 
-
-def resolve_image_filename(filename):
-    try:
-        if not filename:
-            return None
-
-        exact_path = os.path.join(IMAGE_DIR, filename)
-        if os.path.isfile(exact_path):
-            return filename
-
-        files = os.listdir(IMAGE_DIR)
-        lower_target = filename.lower()
-        for f in files:
-            if f.lower() == lower_target:
-                return f
-
-        name_no_ext, _ = os.path.splitext(filename)
-        allowed_exts = {".png", ".jpg", ".jpeg", ".webp"}
-        for f in files:
-            f_name, f_ext = os.path.splitext(f)
-            if f_name.lower() == name_no_ext.lower() and f_ext.lower() in allowed_exts:
-                return f
-
-        variants = set()
-        variants.add(filename.replace(" ", "_"))
-        variants.add(filename.replace("_", " "))
-        variants.add(filename.replace(" ", ""))
-        for v in list(variants):
-            v_lower = v.lower()
-            for f in files:
-                if f.lower() == v_lower:
-                    return f
-                f_name, _ = os.path.splitext(f)
-                if f_name.lower() == os.path.splitext(v)[0].lower():
-                    return f
-    except Exception as e:
-        print("resolve_image_filename error:", e)
-    return None
 
 def build_quick_reply(buttons):
     """สร้าง Quick Reply ตามปุ่มที่ส่งมา"""
@@ -254,13 +211,8 @@ def build_selection_list_flex(title_text, option_labels):
     return bubble
 
 
-def build_tire_flex(tire, model_name, brand_name):
+def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
-
-    # สร้าง link ของแบรนด์
-    brand_name_url = (brand_name or "").replace(" ", "_").lower()
-    link_url = f"https://webtire-production.up.railway.app/tires/{brand_name_url}"
-
     return {
         "type": "bubble",
         "hero": {
@@ -269,10 +221,6 @@ def build_tire_flex(tire, model_name, brand_name):
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit",
-            "action": {
-                "type": "uri",
-                "uri": link_url
-            }
         },
         "body": {
             "type": "box",
@@ -304,24 +252,7 @@ def build_tire_flex(tire, model_name, brand_name):
                 },
             ],
         },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": [
-                {
-                    "type": "button",
-                    "style": "primary",
-                    "action": {
-                        "type": "uri",
-                        "label": f"ดูยาง {brand_name}",
-                        "uri": link_url
-                    }
-                }
-            ]
-        }
     }
-
 
 
 def build_service_list_flex(category_name, services):
@@ -463,10 +394,8 @@ def send_tires_page(reply_token, user_id):
 
     tire_model = get_tire_model_name_by_id(model_id)
     model_name = tire_model.get("model_name", "Unknown Model")
-    brand_name = tire_model.get("brand_name", "")
 
-    # ส่ง brand_name เข้าไปด้วย
-    bubbles = [build_tire_flex(t, model_name, brand_name) for t in tires_page]
+    bubbles = [build_tire_flex(t, model_name) for t in tires_page]
     carousel = {"type": "carousel", "contents": bubbles}
     flex_msg = FlexSendMessage(alt_text=f"ข้อมูลยางรุ่นหน้า {page}", contents=carousel)
 
@@ -570,11 +499,11 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="สวัสดีค่ะ 😊 ยินดีต้อนรับสู่ร้านยางของเราค่ะ\nต้องการให้ช่วยเรื่องอะไรดีคะ ",
-                    quick_reply=build_quick_reply([
+                    quick_reply=build_quick_reply_with_extra([
                         ("🚗 แนะนำยาง", "แนะนำ"),
                         ("🛠️ บริการ", "บริการ"),
                         ("🎉 โปรโมชัน", "โปรโมชัน"),
-                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ที่ไหน"),
+                        ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
                         ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
                     ]),
                 ),
@@ -627,7 +556,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="เลือกเมนูที่ต้องการได้เลยค่ะ ",
-                    quick_reply=build_quick_reply([
+                    quick_reply=build_quick_reply_with_extra([
                         ("🚗 ยี่ห้อยางรถยนต์", "ยี่ห้อยางรถยนต์"),
                         ("🛠️ บริการ", "บริการ"),
                         ("🎉 โปรโมชัน", "โปรโมชัน"),
@@ -774,7 +703,7 @@ def handle_message(event):
                 TextSendMessage(
                     text=(
                         "คุณสามารถพิมพ์คำถามอะไรก็ได้เลยค่ะ เช่น:\n"
-                        "- ยางสำหรับรถเก๋ง\n"
+                        "- รุ่นยางสำหรับรถเก๋ง\n"
                         "- บริการเปลี่ยนถ่ายน้ำมันเครื่อง\n"
                         "- โปรโมชั่นเดือนนี้"
                     ),
@@ -784,7 +713,7 @@ def handle_message(event):
                             ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
                             ("🛠️ บริการ", "บริการ"),
                             ("🎉 โปรโมชัน", "โปรโมชัน"),
-                            ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ที่ไหน"),
+                            ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
                             ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
                         ]
                     ),
@@ -865,17 +794,20 @@ def handle_sticker(event):
                 "ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\n"
                 "ต้องการให้เราช่วยอะไรดีคะ👇"
             ),
-            quick_reply=build_quick_reply(
+            quick_reply=build_quick_reply_with_extra(
                 [
                     ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
                     ("🛠️ บริการ", "บริการ"),
                     ("🎉 โปรโมชัน", "โปรโมชัน"),
-                    ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ที่ไหน"),
+                    ("📍 ร้านอยู่ที่ไหน", "ร้านอยู่ไหน"),
                     ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
                 ]
             ),
         ),
     )
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 
