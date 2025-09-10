@@ -254,7 +254,14 @@ def build_tire_flex(tire, model_name):
         brand_lower = brand_name.lower()
         brand_encoded = quote(brand_lower)
         model_encoded = quote(model_name_clean)
+        
+        # ใช้ URL format ที่เว็บไซต์รองรับ
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
+        
+        # Debug: แสดง URL ที่สร้าง
+        print(f"Generated URL: {tire_url}")
+        print(f"Brand: {brand_name} -> {brand_lower} -> {brand_encoded}")
+        print(f"Model: {model_name_clean} -> {model_encoded}")
     else:
         # ถ้าไม่มีข้อมูลยี่ห้อหรือรุ่น ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
