@@ -807,13 +807,61 @@ def find_brand_in_text(text):
 def find_model_in_text(text):
     text_lower = text.lower()
     all_brands = get_all_tire_brands()
+    print(f"Debug - Searching for model: '{text}'")
+    
     for b in all_brands:
         models = get_tire_models_by_brand_id(b["brand_id"])
         for m in models:
             model_name_lower = m["model_name"].lower()
-            if model_name_lower in text_lower or text_lower in model_name_lower:
+            print(f"Debug - Checking model: '{m['model_name']}' against '{text}'")
+            
+            # ลองหลายวิธีในการจับคู่
+            if (model_name_lower in text_lower or 
+                text_lower in model_name_lower or
+                text_lower.replace('+', '').replace(' ', '') in model_name_lower.replace('+', '').replace(' ', '') or
+                model_name_lower.replace('+', '').replace(' ', '') in text_lower.replace('+', '').replace(' ', '')):
+                print(f"Debug - Found match: '{m['model_name']}'")
                 return m
+    print(f"Debug - No model match found for: '{text}'")
     return None
+
+
+def find_model_by_alias(text):
+    """ค้นหารุ่นยางโดยใช้ชื่อย่อหรือชื่อที่ใช้กันทั่วไป"""
+    text_upper = text.upper()
+    print(f"Debug - Alias search for: '{text_upper}'")
+    
+    # ค้นหาโดยตรงในฐานข้อมูลก่อน
+    all_brands = get_all_tire_brands()
+    for b in all_brands:
+        models = get_tire_models_by_brand_id(b["brand_id"])
+        for m in models:
+            model_name_upper = m["model_name"].upper()
+            print(f"Debug - Checking alias: '{text_upper}' against '{model_name_upper}'")
+            
+            # ตรวจสอบการจับคู่แบบต่างๆ
+            if (text_upper == model_name_upper or
+                text_upper in model_name_upper or
+                model_name_upper in text_upper or
+                text_upper.replace('+', '') == model_name_upper.replace('+', '') or
+                text_upper.replace('+', '') in model_name_upper.replace('+', '') or
+                model_name_upper.replace('+', '') in text_upper.replace('+', '')):
+                print(f"Debug - Found alias match: '{m['model_name']}'")
+                return m
+    
+    return None
+
+
+def debug_all_models():
+    """แสดงรุ่นยางทั้งหมดในฐานข้อมูลเพื่อ debug"""
+    print("=== DEBUG: All models in database ===")
+    all_brands = get_all_tire_brands()
+    for b in all_brands:
+        print(f"Brand: {b['brand_name']}")
+        models = get_tire_models_by_brand_id(b["brand_id"])
+        for m in models:
+            print(f"  - Model: '{m['model_name']}'")
+    print("=== End debug ===")
 
 
 def find_promotion_in_text(text):
@@ -839,6 +887,11 @@ def handle_message(event):
     if not reply_token:
         print("❌ No reply token available")
         return
+    
+    # Debug: แสดงรุ่นยางทั้งหมดในฐานข้อมูล (เฉพาะครั้งแรก)
+    if not hasattr(debug_all_models, '_called'):
+        debug_all_models()
+        debug_all_models._called = True
 
     try:
         # จัดการ Quick Reply เกี่ยวกับยาง (ไม่เรียก Make)
@@ -847,6 +900,58 @@ def handle_message(event):
             set_user_mode(user_id, "menu")
             # ไม่ต้องไปเรียก Make integration แต่ให้ระบบทำงานต่อ
             pass
+        
+        # จัดการคำเฉพาะที่ต้องแสดงข้อมูลทันที
+        if text == "โปรโมชัน":
+            set_user_mode(user_id, "menu")
+            promotions = get_active_promotions()
+            if not promotions:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ขณะนี้ยังไม่มีโปรโมชันค่ะ"),
+                )
+            else:
+                bubbles = [build_promotion_flex(p, i) for i, p in enumerate(promotions[:10])]
+                carousel = {"type": "carousel", "contents": bubbles}
+                line_bot_api.reply_message(
+                    reply_token,
+                    [
+                        FlexSendMessage(alt_text="โปรโมชัน", contents=carousel),
+                        TextSendMessage(
+                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                            quick_reply=build_quick_reply([
+                                ("🏠 เมนูหลัก", "แนะนำ"),
+                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                            ])
+                        )
+                    ]
+                )
+            return
+            
+        elif text == "บริการ":
+            set_user_mode(user_id, "menu")
+            service_categories = get_all_service_categories()
+            if service_categories:
+                bubble = build_selection_list_flex("🛠️ เลือกบริการ", [cat["category"] for cat in service_categories[:12]])
+                line_bot_api.reply_message(
+                    reply_token, 
+                    [
+                        FlexSendMessage(alt_text="เลือกบริการ", contents=bubble),
+                        TextSendMessage(
+                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                            quick_reply=build_quick_reply([
+                                ("🏠 เมนูหลัก", "แนะนำ"),
+                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                            ])
+                        )
+                    ]
+                )
+            else:
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ"),
+                )
+            return
         
         # จัดการคำถามเพิ่มเติม (เรียก Make)
         elif text == "ถามเพิ่มเติม":
@@ -1168,7 +1273,7 @@ def handle_message(event):
                     TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand['brand_name']} ในระบบ"),
                 )
 
-        elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
+        elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)) or (model := find_model_by_alias(text)):
             # Debug: แสดงข้อมูลรุ่นที่พบ
             print(f"Debug - Found model: {model}")
             print(f"Debug - Model name: {model.get('model_name', '')}")
