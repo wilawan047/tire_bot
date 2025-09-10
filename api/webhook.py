@@ -38,6 +38,7 @@ from linebot.models import (
     FlexSendMessage,
     LocationSendMessage,
     StickerMessage,
+    PostbackEvent,
 )
 
 
@@ -236,31 +237,21 @@ def build_selection_list_flex(title_text, option_labels):
     return bubble
 
 
-def build_tire_flex(tire, model_name):
+from urllib.parse import quote
+
+def build_tire_flex(tire):
     image_url = get_image_url(tire.get("tire_image_url"))
-    
-    # สร้าง URL สำหรับลิงก์ไปยังหน้าเว็บไซต์ตามรุ่นยางในฐานข้อมูล
     base_url = "https://webtire-production.up.railway.app"
     
-    # ดึงข้อมูลยี่ห้อและรุ่นจาก tire object
+    # ดึงยี่ห้อ + รุ่น
     brand_name = tire.get('brand_name', '')
-    model_name_clean = model_name or tire.get('model_name', '')
+    model_name = tire.get('model_name', '')
     
-    # สร้าง URL แบบเฉพาะเจาะจงตามรูปแบบ /tires/{brand}?model={model}
-    if brand_name and model_name_clean:
-        # URL encode สำหรับชื่อยี่ห้อและรุ่น
-        from urllib.parse import quote
-        # แปลงชื่อยี่ห้อเป็นตัวเล็กเพื่อให้ตรงกับ URL
-        brand_lower = brand_name.lower()
-        brand_encoded = quote(brand_lower)
-        model_encoded = quote(model_name_clean)
-        
-        # ใช้ URL format ที่เว็บไซต์รองรับ (แบบเดียวกับ build_bfgoodrich_model_flex)
+    if brand_name and model_name:
+        brand_encoded = quote(brand_name.lower())
+        model_encoded = quote(model_name)
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
-        
-        
     else:
-        # ถ้าไม่มีข้อมูลยี่ห้อหรือรุ่น ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
     
     return {
@@ -271,6 +262,10 @@ def build_tire_flex(tire, model_name):
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit",
+            "action": {  # 👈 เพิ่ม action ตรง hero
+                "type": "uri",
+                "uri": tire_url
+            }
         },
         "body": {
             "type": "box",
@@ -414,269 +409,6 @@ def get_tire_model_name_by_id(model_id):
         print(f"Error in get_tire_model_name_by_id: {e}")
         return {"model_name": "Unknown Model", "brand_name": "Unknown Brand"}
 
-
-def build_michelin_model_flex():
-    """สร้าง Flex Message แสดงรุ่นยาง Michelin พร้อมลิงก์"""
-    michelin_models = [
-        {
-            "name": "EXM2+",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-exm2.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/michelin?model=EXM2%2B"
-        },
-        {
-            "name": "ENERGY XM2+",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-energy.jpg", 
-            "url": "https://webtire-production.up.railway.app/tires/michelin?model=ENERGY+XM2%2B"
-        },
-        {
-            "name": "AGILIS3",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-agilis.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/michelin?model=AGILIS3"
-        },
-        {
-            "name": "XCD2",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-xcd.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/michelin?model=XCD2"
-        },
-        {
-            "name": "PRIMACRY SUV+",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-primacry.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/michelin?model=PRIMACRY+SUV%2B"
-        }
-    ]
-    
-    bubbles = []
-    for model in michelin_models:
-        bubble = {
-            "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": model["image"],
-                "size": "full",
-                "aspectRatio": "4:3",
-                "aspectMode": "fit",
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"Michelin {model['name']}",
-                        "weight": "bold",
-                        "size": "lg",
-                        "wrap": True,
-                        "color": "#0B4F6C"
-                    }
-                ],
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "ดูรายละเอียดและราคา",
-                            "uri": model["url"]
-                        }
-                    }
-                ]
-            }
-        }
-        bubbles.append(bubble)
-    
-    return {"type": "carousel", "contents": bubbles}
-
-
-def build_bfgoodrich_model_flex():
-    """สร้าง Flex Message แสดงรุ่นยาง BFGoodrich พร้อมลิงก์"""
-    bfgoodrich_models = [
-        {
-            "name": "G-FORCE PHENOM",
-            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-gforce.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=G-FORCE+PHENOM"
-        },
-        {
-            "name": "ADVANTAGE TOURING",
-            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-advantage.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=ADVANTAGE+TOURING"
-        },
-        {
-            "name": "TRAIL TERRAIN",
-            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-trail.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=TRAIL+TERRAIN"
-        },
-        {
-            "name": "KO3",
-            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-ko3.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=KO3"
-        }
-    ]
-    
-    bubbles = []
-    for model in bfgoodrich_models:
-        bubble = {
-            "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": model["image"],
-                "size": "full",
-                "aspectRatio": "4:3",
-                "aspectMode": "fit",
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"BFGoodrich {model['name']}",
-                        "weight": "bold",
-                        "size": "lg",
-                        "wrap": True,
-                        "color": "#0B4F6C"
-                    }
-                ],
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "ดูรายละเอียดและราคา",
-                            "uri": model["url"]
-                        }
-                    }
-                ]
-            }
-        }
-        bubbles.append(bubble)
-    
-    return {"type": "carousel", "contents": bubbles}
-
-
-def build_maxxis_model_flex():
-    """สร้าง Flex Message แสดงรุ่นยาง Maxxis พร้อมลิงก์"""
-    maxxis_models = [
-        {
-            "name": "MCV5",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-mcv5.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MCV5"
-        },
-        {
-            "name": "PRO-R1",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-pro-r1.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=PRO-R1"
-        },
-        {
-            "name": "MAP3",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-map3.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MAP3"
-        },
-        {
-            "name": "MA-307",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ma307.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-307"
-        },
-        {
-            "name": "MA-579",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ma579.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-579"
-        },
-        {
-            "name": "UE-168",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ue168.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=UE-168"
-        },
-        {
-            "name": "i-PRO",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ipro.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=i-PRO"
-        },
-        {
-            "name": "MS2",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ms2.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MS2"
-        },
-        {
-            "name": "MA-S2",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-mas2.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-S2"
-        },
-        {
-            "name": "HT-770",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ht770.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=HT-770"
-        },
-        {
-            "name": "AT700",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-at700.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=AT700"
-        },
-        {
-            "name": "AT-811",
-            "image": "https://webtire-production.up.railway.app/static/images/maxxis-at811.jpg",
-            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=AT-811"
-        }
-    ]
-    
-    bubbles = []
-    for model in maxxis_models:
-        bubble = {
-            "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": model["image"],
-                "size": "full",
-                "aspectRatio": "4:3",
-                "aspectMode": "fit",
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": f"Maxxis {model['name']}",
-                        "weight": "bold",
-                        "size": "lg",
-                        "wrap": True,
-                        "color": "#0B4F6C"
-                    }
-                ],
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "ดูรายละเอียดและราคา",
-                            "uri": model["url"]
-                        }
-                    }
-                ]
-            }
-        }
-        bubbles.append(bubble)
-    
-    return {"type": "carousel", "contents": bubbles}
 
 
 def build_promotion_flex(promo, index=0):
@@ -957,7 +689,57 @@ def handle_message(event):
         elif text == "ถามเพิ่มเติม":
             # เปลี่ยน mode เป็น free_text เพื่อให้เรียก Make
             set_user_mode(user_id, "free_text")
-            # ให้ระบบทำงานต่อเพื่อเรียก Make integration
+            
+            # แสดงตัวอย่างคำถามที่สามารถถามได้
+            example_questions = [
+                "ยางแบบไหนเหมาะกับรถกระบะ?",
+                "ยางแบบไหนเหมาะกับรถเก๋ง?",
+                "ยางแบบไหนเหมาะกับขับเร็ว?"
+            ]
+            
+            # สร้าง Flex Message แสดงตัวอย่างคำถาม
+            bubbles = []
+            for i, question in enumerate(example_questions[:8]):  # แสดง 8 คำถาม
+                bubble = {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": f"💡 {question}",
+                                "wrap": True,
+                                "size": "sm",
+                                "color": "#666666"
+                            }
+                        ],
+                        "paddingAll": "12px"
+                    },
+                    "action": {
+                        "type": "postback",
+                        "label": "ถามคำถามนี้",
+                        "data": f"ask_question={question}"
+                    }
+                }
+                bubbles.append(bubble)
+            
+            carousel = {"type": "carousel", "contents": bubbles}
+            
+            line_bot_api.reply_message(
+                reply_token,
+                [
+                    TextSendMessage(text="💬 คุณสามารถถามคำถามเกี่ยวกับยางได้เลยค่ะ! ตัวอย่างคำถามที่ถามได้บ่อย:"),
+                    FlexSendMessage(alt_text="ตัวอย่างคำถาม", contents=carousel),
+                    TextSendMessage(
+                        text="📝 หรือพิมพ์คำถามของคุณเองได้เลยค่ะ\n\n💡 หากต้องการออกจากโหมดถามเพิ่มเติม ให้พิมพ์ 'แนะนำ' ค่ะ",
+                        quick_reply=build_quick_reply([
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("🔙 กลับ", "แนะนำ")
+                        ])
+                    )
+                ]
+            )
             return
         
         # In free_text mode, forward to Make unless user types a known navigation command
@@ -1624,6 +1406,58 @@ def handle_message(event):
             )
         except Exception as reply_error:
             print("❌ Failed to send error message:", reply_error)
+
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    """จัดการ Postback events เช่น การกดปุ่มใน Flex Message"""
+    reply_token = event.postback.data
+    user_id = event.source.user_id
+    
+    print(f"Postback received: {reply_token}")
+    
+    # ตรวจสอบว่าเป็นคำถามตัวอย่างหรือไม่
+    if reply_token.startswith("ask_question="):
+        question = reply_token.replace("ask_question=", "")
+        print(f"User selected example question: {question}")
+        
+        # เปลี่ยน mode เป็น free_text และส่งคำถามไปยัง Make
+        set_user_mode(user_id, "free_text")
+        
+        # ส่งคำถามไปยัง Make integration
+        try:
+            make_answer = forward_to_make({
+                "replyToken": reply_token,
+                "userId": user_id,
+                "text": question,
+            })
+            
+            if make_answer:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [
+                        TextSendMessage(text=f"คำถาม: {question}"),
+                        TextSendMessage(text=make_answer),
+                        TextSendMessage(
+                            text="มีคำถามอื่นอีกไหมคะ? หรือพิมพ์ 'แนะนำ' เพื่อกลับไปเมนูหลัก",
+                            quick_reply=build_quick_reply([
+                                ("🏠 เมนูหลัก", "แนะนำ"),
+                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                            ])
+                        )
+                    ]
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="ขออภัยค่ะ ไม่สามารถตอบคำถามได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง")
+                )
+        except Exception as e:
+            print(f"Error calling Make integration: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
+            )
 
 
 @handler.add(MessageEvent, message=StickerMessage)
