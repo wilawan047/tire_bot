@@ -813,7 +813,7 @@ def find_model_in_text(text):
     for b in all_brands:
         models = get_tire_models_by_brand_id(b["brand_id"])
         for m in models:
-            if m["model_name"].lower() in text_lower:
+            if m["model_name"].lower() in text_lower or text_lower in m["model_name"].lower():
                 return m
     return None
 
@@ -1243,17 +1243,23 @@ def handle_message(event):
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
+                    # Debug: แสดงข้อมูลที่ได้มา
+                    print(f"Debug - Similar model: Brand='{brand_name}', Model='{model_name}'")
+                    
                     if brand_name and model_name:
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_encoded = quote(model_name)
                         model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
+                        print(f"Debug - Generated URL: {model_url}")
                     elif brand_name:
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}"
+                        print(f"Debug - Generated URL (brand only): {model_url}")
                     else:
                         model_url = "https://webtire-production.up.railway.app/tires"
+                        print(f"Debug - Generated URL (default): {model_url}")
                     
                     bubble = {
                         "type": "bubble",
