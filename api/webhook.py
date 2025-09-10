@@ -834,11 +834,17 @@ def handle_message(event):
     print(f"Received text: '{text}' from user: {user_id}")
 
     try:
-        # จัดการ Quick Reply ก่อน
-        if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน", "ถามเพิ่มเติม"]:
+        # จัดการ Quick Reply เกี่ยวกับยาง (ไม่เรียก Make)
+        if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน"]:
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
             set_user_mode(user_id, "menu")
             # ไม่ต้องไปเรียก Make integration แต่ให้ระบบทำงานต่อ
+        
+        # จัดการคำถามเพิ่มเติม (เรียก Make)
+        elif text == "ถามเพิ่มเติม":
+            # เปลี่ยน mode เป็น free_text เพื่อให้เรียก Make
+            set_user_mode(user_id, "free_text")
+            # ให้ระบบทำงานต่อเพื่อเรียก Make integration
         
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
