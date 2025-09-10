@@ -255,7 +255,7 @@ def build_tire_flex(tire, model_name):
         brand_encoded = quote(brand_lower)
         model_encoded = quote(model_name_clean)
         
-        # ใช้ URL format ที่เว็บไซต์รองรับ
+        # ใช้ URL format ที่เว็บไซต์รองรับ (แบบเดียวกับ build_bfgoodrich_model_flex)
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
         
     else:
@@ -838,6 +838,8 @@ def handle_message(event):
         if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน", "ถามเพิ่มเติม"]:
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
             set_user_mode(user_id, "menu")
+            # ไม่ต้องไปเรียก Make integration
+            return
         
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
