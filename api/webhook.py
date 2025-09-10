@@ -248,6 +248,8 @@ def build_tire_flex(tire):
     brand_name = tire.get('brand_name', '')
     model_name_clean = tire.get('model_name', '')
     
+    print(f"Debug - build_tire_flex: brand_name='{brand_name}', model_name='{model_name_clean}'")
+    
     # สร้าง URL แบบเฉพาะเจาะจงตามรูปแบบ /tires/{brand}?model={model}
     if brand_name and model_name_clean:
         # URL encode สำหรับชื่อยี่ห้อและรุ่น
@@ -257,11 +259,13 @@ def build_tire_flex(tire):
         brand_encoded = quote(brand_lower)
         model_encoded = quote(model_name_clean)
         
-        # ใช้ URL format ที่เว็บไซต์รองรับ
+        # ใช้ URL format ที่เว็บไซต์รองรับ (เหมือนกับใน build_michelin_model_flex)
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
+        print(f"Debug - Generated specific URL: {tire_url}")
     else:
         # ถ้าไม่มีข้อมูลยี่ห้อหรือรุ่น ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
+        print(f"Debug - Using default URL: {tire_url}")
     
     return {
         "type": "bubble",
@@ -278,7 +282,7 @@ def build_tire_flex(tire):
             "contents": [
                 {
                     "type": "text",
-                    "text": model_name_clean or "ไม่ทราบรุ่น",
+                    "text": model_name_clean or tire.get('model_name', '') or "ไม่ทราบรุ่น",
                     "weight": "bold",
                     "size": "xl",
                     "wrap": True,
@@ -1398,6 +1402,8 @@ def handle_message(event):
             model_id = model.get("model_id")
             tires = get_tires_by_model_id(model_id)
             
+            print(f"Debug - Found {len(tires)} tires for model {model.get('model_name', '')}")
+            
             if not tires:
                 line_bot_api.reply_message(
                     reply_token,
@@ -1408,10 +1414,14 @@ def handle_message(event):
             # สร้าง Flex Message สำหรับแต่ละยาง
             bubbles = []
             for tire in tires:
-                # เพิ่มข้อมูลยี่ห้อใน tire object
+                # เพิ่มข้อมูลยี่ห้อและรุ่นใน tire object
                 tire['brand_name'] = model.get("brand_name", "")
+                tire['model_name'] = model.get("model_name", "")
+                print(f"Debug - Tire brand: {tire.get('brand_name', '')}, model: {tire.get('model_name', '')}")
                 tire_flex = build_tire_flex(tire)
                 bubbles.append(tire_flex)
+            
+            print(f"Debug - Created {len(bubbles)} bubbles")
             
             # สร้าง carousel
             carousel = {"type": "carousel", "contents": bubbles}
