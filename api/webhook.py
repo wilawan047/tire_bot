@@ -848,14 +848,14 @@ def handle_message(event):
             if all_models:
                 bubble = build_selection_list_flex("📌 เลือกรุ่นยาง", all_models[:12])
                 line_bot_api.reply_message(
-                    reply_token,
+                reply_token,
                     [
                         FlexSendMessage(
                             alt_text="เลือกรุ่นยาง",
                             contents=bubble
                         ),
-                        TextSendMessage(
-                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                TextSendMessage(
+                    text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                             quick_reply=build_quick_reply([
                                 ("🏠 เมนูหลัก", "แนะนำ"),
                                 ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
@@ -983,45 +983,90 @@ def handle_message(event):
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
             set_user_mode(user_id, "menu")
             
-            # ตรวจสอบว่าเป็นรุ่นของยี่ห้อที่ต้องการแสดง Flex Message พิเศษหรือไม่
+            # สร้าง Flex Message สำหรับรุ่นยางที่เลือก พร้อมลิงก์
             brand_name = model.get("brand_name", "").lower()
+            model_name = model.get("model_name", "")
             
+            # สร้าง URL ตามยี่ห้อ
             if brand_name == "michelin":
-                carousel = build_michelin_model_flex()
-                line_bot_api.reply_message(
-                    reply_token,
-                    [
-                        FlexSendMessage(alt_text="รุ่นยาง Michelin", contents=carousel),
-                        TextSendMessage(
-                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                            quick_reply=build_quick_reply([
-                                ("🏠 เมนูหลัก", "แนะนำ"),
-                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                            ])
-                        )
-                    ]
-                )
+                model_url = f"https://webtire-production.up.railway.app/tires/michelin?model={model_name.replace(' ', '+').replace('+', '%2B')}"
             elif brand_name == "bfgoodrich":
-                carousel = build_bfgoodrich_model_flex()
-                line_bot_api.reply_message(
-                    reply_token,
-                    [
-                        FlexSendMessage(alt_text="รุ่นยาง BFGoodrich", contents=carousel),
-                        TextSendMessage(
-                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                            quick_reply=build_quick_reply([
-                                ("🏠 เมนูหลัก", "แนะนำ"),
-                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                            ])
-                        )
-                    ]
-                )
+                model_url = f"https://webtire-production.up.railway.app/tires/bfgoodrich?model={model_name.replace(' ', '+')}"
             elif brand_name == "maxxis":
-                carousel = build_maxxis_model_flex()
-                line_bot_api.reply_message(
+                model_url = f"https://webtire-production.up.railway.app/tires/maxxis?model={model_name.replace(' ', '+')}"
+            else:
+                model_url = f"https://webtire-production.up.railway.app/tires/{brand_name}?model={model_name.replace(' ', '+')}"
+            
+            # สร้าง Flex Message สำหรับรุ่นยาง
+            flex_content = {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": f"https://webtire-production.up.railway.app/static/images/{brand_name}-{model_name.lower().replace(' ', '-').replace('+', '')}.jpg",
+                    "size": "full",
+                    "aspectRatio": "4:3",
+                    "aspectMode": "fit",
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": f"{brand_name.upper()} {model_name}",
+                            "weight": "bold",
+                            "size": "lg",
+                            "wrap": True,
+                            "color": "#0B4F6C"
+                        }
+                    ],
+                },
+                "footer": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "style": "link",
+                            "height": "sm",
+                            "action": {
+                                "type": "uri",
+                                "label": "ดูรายละเอียดและราคา",
+                                "uri": model_url
+                            }
+                        }
+                    ]
+                }
+            }
+            
+            line_bot_api.reply_message(
                     reply_token,
+                [
+                    FlexSendMessage(alt_text=f"รุ่นยาง {model_name}", contents=flex_content),
+                    TextSendMessage(
+                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                        quick_reply=build_quick_reply([
+                            ("🔙 ย้อนกลับ", f"ยี่ห้อ{model.get('brand_name', '')}"),
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
+                ]
+                )
+
+        elif text.startswith("ยี่ห้อ"):
+            # จัดการปุ่มย้อนกลับ
+            brand_name = text.replace("ยี่ห้อ", "")
+            set_user_mode(user_id, "menu")
+            models = get_tire_models_by_brand_id(brand_name)
+            if models:
+                labels = [m["model_name"] for m in models[:12]]
+                bubble = build_selection_list_flex(f"📌 เลือกรุ่นยางของ {brand_name}", labels)
+                line_bot_api.reply_message(
+                    reply_token, 
                     [
-                        FlexSendMessage(alt_text="รุ่นยาง Maxxis", contents=carousel),
+                        FlexSendMessage(alt_text="เลือกรุ่นยาง", contents=bubble),
                         TextSendMessage(
                             text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                             quick_reply=build_quick_reply([
@@ -1032,15 +1077,9 @@ def handle_message(event):
                     ]
                 )
             else:
-                # ยี่ห้ออื่นใช้ระบบเดิม
-             tires = get_tires_by_model_id(model["model_id"])
-            if tires:
-                user_pages[user_id] = {"model_id": model["model_id"], "page": 1}
-                send_tires_page(reply_token, user_id)
-            else:
                 line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(text=f"ขออภัย ไม่พบข้อมูลยางสำหรับรุ่น {model['model_name']} ในระบบ"),
+                    TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand_name} ในระบบ"),
                 )
 
         elif text.startswith("page_"):
