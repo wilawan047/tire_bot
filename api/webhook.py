@@ -239,21 +239,17 @@ def build_selection_list_flex(title_text, option_labels):
 def build_tire_flex(tire, model_name):
     image_url = get_image_url(tire.get("tire_image_url"))
     
-    # สร้าง URL สำหรับลิงก์ไปยังหน้าเว็บไซต์ตามยี่ห้อและรุ่น
+    # สร้าง URL สำหรับลิงก์ไปยังหน้าเว็บไซต์ของยางแต่ละรุ่น
     base_url = "https://webtire-production.up.railway.app"
     
-    # ดึงข้อมูลยี่ห้อและรุ่นจาก tire object
-    brand_name = tire.get('brand_name', '')
-    model_name_clean = model_name or tire.get('model_name', '')
+    # ใช้ tire_id เป็นหลักในการสร้าง URL
+    tire_id = tire.get('tire_id', '')
     
-    # สร้าง URL แบบเฉพาะเจาะจง
-    if brand_name and model_name_clean:
-        # URL encode สำหรับชื่อยี่ห้อและรุ่น
-        from urllib.parse import quote
-        brand_encoded = quote(brand_name)
-        model_encoded = quote(model_name_clean)
-        tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
+    if tire_id:
+        # ถ้ามี tire_id ให้ไปยังหน้ารายละเอียดยางโดยตรง
+        tire_url = f"{base_url}/tire/{tire_id}"
     else:
+        # ถ้าไม่มี tire_id ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
     
     return {
