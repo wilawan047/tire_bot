@@ -499,7 +499,7 @@ def send_tires_page(reply_token, user_id):
     for t in tires_page:
         # เพิ่มข้อมูลยี่ห้อใน tire object
         t['brand_name'] = tire_model.get("brand_name", "")
-        tire_flex = build_tire_flex(t, model_name)
+        tire_flex = build_tire_flex(t)
         bubbles.append(tire_flex)
     carousel = {"type": "carousel", "contents": bubbles}
     flex_msg = FlexSendMessage(alt_text=f"ข้อมูลยางรุ่นหน้า {page}", contents=carousel)
@@ -818,7 +818,7 @@ def handle_message(event):
                         for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
-                            tire_flex = build_tire_flex(tire, model_name)
+                            tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
@@ -965,7 +965,7 @@ def handle_message(event):
                         for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
-                            tire_flex = build_tire_flex(tire, model_name)
+                            tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
@@ -1078,7 +1078,7 @@ def handle_message(event):
             for tire in tires:
                 # เพิ่มข้อมูลยี่ห้อใน tire object
                 tire['brand_name'] = model.get("brand_name", "")
-                tire_flex = build_tire_flex(tire, model.get("model_name", ""))
+                tire_flex = build_tire_flex(tire)
                 bubbles.append(tire_flex)
             
             # สร้าง carousel
@@ -1127,7 +1127,7 @@ def handle_message(event):
                         for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
-                            tire_flex = build_tire_flex(tire, model_name)
+                            tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
