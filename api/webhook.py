@@ -96,32 +96,52 @@ def home():
 def file_exists(filename):
     if not filename:
         return False
-    return os.path.isfile(os.path.join("static/images2", filename))
+    norm = str(filename).replace("\\", "/").lstrip("/")
+    # If includes subpath, check under static root; otherwise default to images2
+    if "/" in norm:
+        return os.path.isfile(os.path.join("static", norm))
+    return os.path.isfile(os.path.join("static", "images2", norm))
 
 
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
 
-    if not filename or not file_exists(filename):
-        print(f"❌ File missing: {filename}, ใช้ fallback image")
-        fallback_file = "default-tire.jpg"
-        if not file_exists(fallback_file):
+    # External URLs pass through
+    if filename and (str(filename).startswith("http://") or str(filename).startswith("https://")):
+        return str(filename)
+
+    # Normalize and resolve subpath under static
+    norm = (str(filename) if filename else "").replace("\\", "/").lstrip("/")
+    if not norm:
+        norm = "images2/default-tire.jpg"
+
+    # Default directory is images2 if no subpath supplied
+    if "/" not in norm:
+        norm = f"images2/{norm}"
+
+    file_path = os.path.join("static", norm)
+    if not os.path.isfile(file_path):
+        print(f"❌ File missing: {norm}, ใช้ fallback image")
+        fallback_rel = "images2/default-tire.jpg"
+        fallback_abs = os.path.join("static", fallback_rel)
+        if os.path.isfile(fallback_abs):
+            norm = fallback_rel
+            file_path = fallback_abs
+        else:
             return "https://via.placeholder.com/400x300?text=No+Image"
-        filename = fallback_file
 
+    # Build URL
     if not base_url:
-        url = f"/static/images2/{quote(filename)}"
+        url = f"/static/{quote(norm)}"
     else:
-        url = f"{base_url}/static/images2/{quote(filename)}"
+        url = f"{base_url}/static/{quote(norm)}"
 
-    # Append cache-busting query with file mtime to ensure updated images are fetched
+    # Cache-busting using mtime
     try:
-        file_path = os.path.join("static", "images2", filename)
-        if os.path.isfile(file_path):
-            mtime = int(os.path.getmtime(file_path))
-            sep = "&" if "?" in url else "?"
-            url = f"{url}{sep}v={mtime}"
-    except Exception as _e:
+        mtime = int(os.path.getmtime(file_path))
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}v={mtime}"
+    except Exception:
         pass
 
     print("URL ที่ถูกสร้าง:", url)
