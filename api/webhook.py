@@ -841,7 +841,7 @@ def handle_message(event):
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
             set_user_mode(user_id, "menu")
             # ไม่ต้องไปเรียก Make integration แต่ให้ระบบทำงานต่อ
-            return
+            pass
         
         # จัดการคำถามเพิ่มเติม (เรียก Make)
         elif text == "ถามเพิ่มเติม":
