@@ -834,6 +834,11 @@ def handle_message(event):
 
     # Debug: แสดงข้อความที่ได้รับ
     print(f"Received text: '{text}' from user: {user_id}")
+    
+    # ตรวจสอบ reply_token
+    if not reply_token:
+        print("❌ No reply token available")
+        return
 
     try:
         # จัดการ Quick Reply เกี่ยวกับยาง (ไม่เรียก Make)
@@ -913,7 +918,7 @@ def handle_message(event):
             if all_models:
                 # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
                 bubbles = []
-                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                for model in all_models[:10]:  # จำกัดไว้ 10 รุ่น
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
@@ -923,7 +928,7 @@ def handle_message(event):
                     
                     if tires:
                         # สร้าง Flex Message สำหรับแต่ละยาง
-                        for tire in tires[:2]:  # จำกัดไว้ 2 รุ่นต่อรุ่นยาง
+                        for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire, model_name)
@@ -963,7 +968,9 @@ def handle_message(event):
                         }
                         bubbles.append(bubble)
                 
-                # สร้าง Carousel
+                # สร้าง Carousel (จำกัดไม่เกิน 10 รายการ)
+                if len(bubbles) > 10:
+                    bubbles = bubbles[:10]
                 carousel = {"type": "carousel", "contents": bubbles}
                 
                 line_bot_api.reply_message(
@@ -1058,7 +1065,7 @@ def handle_message(event):
             if all_models:
                 # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
                 bubbles = []
-                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                for model in all_models[:10]:  # จำกัดไว้ 10 รุ่น
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
@@ -1068,7 +1075,7 @@ def handle_message(event):
                     
                     if tires:
                         # สร้าง Flex Message สำหรับแต่ละยาง
-                        for tire in tires[:2]:  # จำกัดไว้ 2 รุ่นต่อรุ่นยาง
+                        for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire, model_name)
@@ -1108,7 +1115,9 @@ def handle_message(event):
                         }
                         bubbles.append(bubble)
                 
-                # สร้าง Carousel
+                # สร้าง Carousel (จำกัดไม่เกิน 10 รายการ)
+                if len(bubbles) > 10:
+                    bubbles = bubbles[:10]
                 carousel = {"type": "carousel", "contents": bubbles}
                 
                 line_bot_api.reply_message(
@@ -1218,7 +1227,7 @@ def handle_message(event):
             if similar_models:
                 # แสดงรุ่นยางที่คล้ายกัน
                 bubbles = []
-                for model in similar_models[:5]:  # จำกัดไว้ 5 รุ่น
+                for model in similar_models[:3]:  # จำกัดไว้ 3 รุ่น
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
@@ -1228,7 +1237,7 @@ def handle_message(event):
                     
                     if tires:
                         # สร้าง Flex Message สำหรับแต่ละยาง
-                        for tire in tires[:2]:  # จำกัดไว้ 2 รุ่นต่อรุ่นยาง
+                        for tire in tires[:1]:  # จำกัดไว้ 1 รุ่นต่อรุ่นยาง
                             # เพิ่มข้อมูลยี่ห้อใน tire object
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire, model_name)
@@ -1503,10 +1512,13 @@ def handle_message(event):
 
     except Exception as e:
         print("❌ ERROR:", e)
-        line_bot_api.reply_message(
-            reply_token,
-            TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"),
-        )
+        try:
+            line_bot_api.reply_message(
+                reply_token,
+                TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"),
+            )
+        except Exception as reply_error:
+            print("❌ Failed to send error message:", reply_error)
 
 
 @handler.add(MessageEvent, message=StickerMessage)
