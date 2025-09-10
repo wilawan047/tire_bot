@@ -838,6 +838,11 @@ def handle_message(event):
     print(f"Received text: '{text}' from user: {user_id}")
 
     try:
+        # จัดการ Quick Reply ก่อน
+        if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน", "ถามเพิ่มเติม"]:
+            # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
+            set_user_mode(user_id, "menu")
+        
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
             navigation_triggers = [
@@ -1172,23 +1177,11 @@ def handle_message(event):
                 )
 
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
-            # Debug: ตรวจสอบการจับคู่รุ่นยาง
-            print(f"Debug - Trying to match model: '{text}'")
-            model1 = get_tire_model_by_name(text)
-            model2 = find_model_in_text(text)
-            print(f"Debug - get_tire_model_by_name result: {model1}")
-            print(f"Debug - find_model_in_text result: {model2}")
             set_user_mode(user_id, "menu")
-            
-            # Debug: แสดงข้อมูลรุ่นที่พบ
-            print(f"Found model: {model}")
             
             # ดึงข้อมูลยางทั้งหมดของรุ่นนี้
             model_id = model.get("model_id")
             tires = get_tires_by_model_id(model_id)
-            
-            # Debug: แสดงจำนวนยางที่พบ
-            print(f"Found {len(tires) if tires else 0} tires for model_id: {model_id}")
             
             if not tires:
                 line_bot_api.reply_message(
@@ -1224,8 +1217,6 @@ def handle_message(event):
             )
 
         else:
-            # Debug: แสดงข้อความที่ไม่สามารถจับคู่ได้
-            print(f"Debug - No model match found for: '{text}'")
             # ลองค้นหารุ่นยางที่คล้ายกัน
             similar_models = []
             all_brands = get_all_tire_brands()
@@ -1243,23 +1234,17 @@ def handle_message(event):
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
-                    # Debug: แสดงข้อมูลที่ได้มา
-                    print(f"Debug - Similar model: Brand='{brand_name}', Model='{model_name}'")
-                    
                     if brand_name and model_name:
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_encoded = quote(model_name)
                         model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
-                        print(f"Debug - Generated URL: {model_url}")
                     elif brand_name:
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}"
-                        print(f"Debug - Generated URL (brand only): {model_url}")
                     else:
                         model_url = "https://webtire-production.up.railway.app/tires"
-                        print(f"Debug - Generated URL (default): {model_url}")
                     
                     bubble = {
                         "type": "bubble",
