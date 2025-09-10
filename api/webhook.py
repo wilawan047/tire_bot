@@ -838,8 +838,7 @@ def handle_message(event):
         if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน", "ถามเพิ่มเติม"]:
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
             set_user_mode(user_id, "menu")
-            # ไม่ต้องไปเรียก Make integration
-            return
+            # ไม่ต้องไปเรียก Make integration แต่ให้ระบบทำงานต่อ
         
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
