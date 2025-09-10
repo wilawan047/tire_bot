@@ -114,6 +114,16 @@ def get_image_url(filename):
     else:
         url = f"{base_url}/static/images2/{quote(filename)}"
 
+    # Append cache-busting query with file mtime to ensure updated images are fetched
+    try:
+        file_path = os.path.join("static", "images2", filename)
+        if os.path.isfile(file_path):
+            mtime = int(os.path.getmtime(file_path))
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}v={mtime}"
+    except Exception as _e:
+        pass
+
     print("URL ที่ถูกสร้าง:", url)
     return url
 
