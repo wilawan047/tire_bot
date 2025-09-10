@@ -258,6 +258,11 @@ def build_tire_flex(tire, model_name):
         # ใช้ URL format ที่เว็บไซต์รองรับ (แบบเดียวกับ build_bfgoodrich_model_flex)
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
         
+        # Debug: แสดงข้อมูลที่ได้มา
+        print(f"Debug - Brand: '{brand_name}' -> '{brand_encoded}'")
+        print(f"Debug - Model: '{model_name_clean}' -> '{model_encoded}'")
+        print(f"Debug - Generated URL: {tire_url}")
+        
     else:
         # ถ้าไม่มีข้อมูลยี่ห้อหรือรุ่น ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
@@ -806,11 +811,16 @@ def find_brand_in_text(text):
 def find_model_in_text(text):
     text_lower = text.lower()
     all_brands = get_all_tire_brands()
+    print(f"Debug - Searching for model: '{text}' (lowercase: '{text_lower}')")
     for b in all_brands:
         models = get_tire_models_by_brand_id(b["brand_id"])
         for m in models:
-            if m["model_name"].lower() in text_lower or text_lower in m["model_name"].lower():
+            model_name_lower = m["model_name"].lower()
+            print(f"Debug - Checking model: '{m['model_name']}' (lowercase: '{model_name_lower}')")
+            if model_name_lower in text_lower or text_lower in model_name_lower:
+                print(f"Debug - Found match: '{m['model_name']}'")
                 return m
+    print(f"Debug - No model match found for: '{text}'")
     return None
 
 
