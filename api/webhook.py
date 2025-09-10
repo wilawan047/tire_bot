@@ -237,21 +237,30 @@ def build_selection_list_flex(title_text, option_labels):
     return bubble
 
 
-from urllib.parse import quote
-
 def build_tire_flex(tire):
+    """สร้าง Flex Message สำหรับแสดงข้อมูลยาง"""
     image_url = get_image_url(tire.get("tire_image_url"))
+    
+    # สร้าง URL สำหรับลิงก์ไปยังหน้าเว็บไซต์ตามรุ่นยางในฐานข้อมูล
     base_url = "https://webtire-production.up.railway.app"
     
-    # ดึงยี่ห้อ + รุ่น
+    # ดึงข้อมูลยี่ห้อและรุ่นจาก tire object
     brand_name = tire.get('brand_name', '')
-    model_name = tire.get('model_name', '')
+    model_name_clean = tire.get('model_name', '')
     
-    if brand_name and model_name:
-        brand_encoded = quote(brand_name.lower())
-        model_encoded = quote(model_name)
+    # สร้าง URL แบบเฉพาะเจาะจงตามรูปแบบ /tires/{brand}?model={model}
+    if brand_name and model_name_clean:
+        # URL encode สำหรับชื่อยี่ห้อและรุ่น
+        from urllib.parse import quote
+        # แปลงชื่อยี่ห้อเป็นตัวเล็กเพื่อให้ตรงกับ URL
+        brand_lower = brand_name.lower()
+        brand_encoded = quote(brand_lower)
+        model_encoded = quote(model_name_clean)
+        
+        # ใช้ URL format ที่เว็บไซต์รองรับ
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
     else:
+        # ถ้าไม่มีข้อมูลยี่ห้อหรือรุ่น ให้ไปยังหน้าเว็บไซต์หลัก
         tire_url = f"{base_url}/tires"
     
     return {
@@ -262,10 +271,6 @@ def build_tire_flex(tire):
             "size": "full",
             "aspectRatio": "4:3",
             "aspectMode": "fit",
-            "action": {  # 👈 เพิ่ม action ตรง hero
-                "type": "uri",
-                "uri": tire_url
-            }
         },
         "body": {
             "type": "box",
@@ -273,7 +278,7 @@ def build_tire_flex(tire):
             "contents": [
                 {
                     "type": "text",
-                    "text": model_name or "ไม่ทราบรุ่น",
+                    "text": model_name_clean or "ไม่ทราบรุ่น",
                     "weight": "bold",
                     "size": "xl",
                     "wrap": True,
@@ -315,6 +320,333 @@ def build_tire_flex(tire):
             ]
         }
     }
+
+
+def build_michelin_model_flex():
+    """สร้าง Flex Message แสดงรุ่นยาง Michelin พร้อมลิงก์"""
+    michelin_models = [
+        {
+            "name": "EXM2+",
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-exm2.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/michelin?model=EXM2%2B"
+        },
+        {
+            "name": "ENERGY XM2+",
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-energy.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/michelin?model=ENERGY+XM2%2B"
+        },
+        {
+            "name": "AGILIS3",
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-agilis.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/michelin?model=AGILIS3"
+        },
+        {
+            "name": "XCD2",
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-xcd.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/michelin?model=XCD2"
+        },
+        {
+            "name": "PRIMACRY SUV+",
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-primacry.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/michelin?model=PRIMACRY+SUV%2B"
+        }
+    ]
+    
+    bubbles = []
+    for model in michelin_models:
+        bubble = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": model["image"],
+                "size": "full",
+                "aspectRatio": "4:3",
+                "aspectMode": "fit",
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"Michelin {model['name']}",
+                        "weight": "bold",
+                        "size": "lg",
+                        "wrap": True,
+                        "color": "#0B4F6C"
+                    }
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "ดูรายละเอียดและราคา",
+                            "uri": model["url"]
+                        }
+                    }
+                ]
+            }
+        }
+        bubbles.append(bubble)
+    
+    return {"type": "carousel", "contents": bubbles}
+
+
+def build_bfgoodrich_model_flex():
+    """สร้าง Flex Message แสดงรุ่นยาง BFGoodrich พร้อมลิงก์"""
+    bfgoodrich_models = [
+        {
+            "name": "G-FORCE PHENOM",
+            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-gforce.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=G-FORCE+PHENOM"
+        },
+        {
+            "name": "ADVANTAGE TOURING",
+            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-advantage.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=ADVANTAGE+TOURING"
+        },
+        {
+            "name": "TRAIL TERRAIN",
+            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-trail.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=TRAIL+TERRAIN"
+        },
+        {
+            "name": "KO3",
+            "image": "https://webtire-production.up.railway.app/static/images/bfgoodrich-ko3.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/bfgoodrich?model=KO3"
+        }
+    ]
+    
+    bubbles = []
+    for model in bfgoodrich_models:
+        bubble = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": model["image"],
+                "size": "full",
+                "aspectRatio": "4:3",
+                "aspectMode": "fit",
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"BFGoodrich {model['name']}",
+                        "weight": "bold",
+                        "size": "lg",
+                        "wrap": True,
+                        "color": "#0B4F6C"
+                    }
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "ดูรายละเอียดและราคา",
+                            "uri": model["url"]
+                        }
+                    }
+                ]
+            }
+        }
+        bubbles.append(bubble)
+    
+    return {"type": "carousel", "contents": bubbles}
+
+
+def build_maxxis_model_flex():
+    """สร้าง Flex Message แสดงรุ่นยาง Maxxis พร้อมลิงก์"""
+    maxxis_models = [
+        {
+            "name": "MCV5",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-mcv5.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MCV5"
+        },
+        {
+            "name": "PRO-R1",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-pro-r1.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=PRO-R1"
+        },
+        {
+            "name": "MAP3",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-map3.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MAP3"
+        },
+        {
+            "name": "MA-307",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ma307.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-307"
+        },
+        {
+            "name": "MA-579",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ma579.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-579"
+        },
+        {
+            "name": "UE-168",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ue168.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=UE-168"
+        },
+        {
+            "name": "i-PRO",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ipro.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=i-PRO"
+        },
+        {
+            "name": "MS2",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ms2.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MS2"
+        },
+        {
+            "name": "MA-S2",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-mas2.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=MA-S2"
+        },
+        {
+            "name": "HT-770",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-ht770.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=HT-770"
+        },
+        {
+            "name": "AT700",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-at700.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=AT700"
+        },
+        {
+            "name": "AT-811",
+            "image": "https://webtire-production.up.railway.app/static/images/maxxis-at811.jpg",
+            "url": "https://webtire-production.up.railway.app/tires/maxxis?model=AT-811"
+        }
+    ]
+    
+    bubbles = []
+    for model in maxxis_models:
+        bubble = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": model["image"],
+                "size": "full",
+                "aspectRatio": "4:3",
+                "aspectMode": "fit",
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": f"Maxxis {model['name']}",
+                        "weight": "bold",
+                        "size": "lg",
+                        "wrap": True,
+                        "color": "#0B4F6C"
+                    }
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "ดูรายละเอียดและราคา",
+                            "uri": model["url"]
+                        }
+                    }
+                ]
+            }
+        }
+        bubbles.append(bubble)
+    
+    return {"type": "carousel", "contents": bubbles}
+
+
+def build_promotion_flex(promo, index=0):
+    image_url = get_image_url(promo.get("image_url"))
+    if not image_url or "http" not in image_url:
+        image_url = "https://placeholder.vercel.app/images/default-promotion.jpg"
+    
+    # ตัดข้อความ description ให้สั้นลง (ไม่เกิน 100 ตัวอักษร)
+    description = promo.get("description", "-")
+    if len(description) > 100:
+        description = description[:97] + "..."
+    
+    # กำหนดลิงก์ตาม index
+    promotion_links = {
+        0: "https://webtire-production.up.railway.app/promotions/13",
+        1: "https://webtire-production.up.railway.app/promotions/14",
+        2: "https://webtire-production.up.railway.app/promotions/15",
+        3: "https://webtire-production.up.railway.app/promotions/16",
+        4: "https://webtire-production.up.railway.app/promotions/17",
+        5: "https://webtire-production.up.railway.app/promotions/18"
+    }
+    
+    bubble = {
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "url": image_url,
+            "size": "full",
+            "aspectRatio": "4:3",
+            "aspectMode": "fit",
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": promo.get("title", "-"), "weight": "bold", "size": "lg", "wrap": True},
+                {"type": "text", "text": description, "size": "sm", "wrap": True, "margin": "md"},
+                {"type": "text", "text": f"📅 {promo['start_date']} ถึง {promo['end_date']}", "size": "xs", "color": "#888888", "margin": "md"},
+            ],
+        },
+    }
+    
+    # เพิ่มลิงก์สำหรับโปรโมชันที่มีลิงก์กำหนด
+    if index in promotion_links:
+        bubble["footer"] = {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "link",
+                    "height": "sm",
+                    "action": {
+                        "type": "uri",
+                        "label": "ดูรายละเอียดเพิ่มเติม",
+                        "uri": promotion_links[index]
+                    }
+                }
+            ]
+        }
+    
+    return bubble
 
 
 def build_service_list_flex(category_name, services):
