@@ -250,7 +250,9 @@ def build_tire_flex(tire, model_name):
     if brand_name and model_name_clean:
         # URL encode สำหรับชื่อยี่ห้อและรุ่น
         from urllib.parse import quote
-        brand_encoded = quote(brand_name)
+        # แปลงชื่อยี่ห้อเป็นตัวเล็กเพื่อให้ตรงกับ URL
+        brand_lower = brand_name.lower()
+        brand_encoded = quote(brand_lower)
         model_encoded = quote(model_name_clean)
         tire_url = f"{base_url}/tires/{brand_encoded}?model={model_encoded}"
     else:
@@ -1055,7 +1057,7 @@ def handle_message(event):
                     TextSendMessage(
                         text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                         quick_reply=build_quick_reply([
-                            ("⬅️ กลับไปเลือกยี่ห้อ", f"ยี่ห้อ{model.get('brand_name', '')}"),
+                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
                             ("🏠 เมนูหลัก", "แนะนำ"),
                             ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
                         ])
