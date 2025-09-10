@@ -373,12 +373,27 @@ def get_tire_model_name_by_id(model_id):
         return {"model_name": "Unknown Model", "brand_name": "Unknown Brand"}
 
 
-def build_promotion_flex(promo):
+def build_promotion_flex(promo, index=0):
     image_url = get_image_url(promo.get("image_url"))
     if not image_url or "http" not in image_url:
         image_url = "https://placeholder.vercel.app/images/default-promotion.jpg"
 
-    return {
+    # ตัดข้อความ description ให้สั้นลง (ไม่เกิน 100 ตัวอักษร)
+    description = promo.get("description", "-")
+    if len(description) > 100:
+        description = description[:97] + "..."
+
+    # กำหนดลิงก์ตาม index
+    promotion_links = {
+        0: "https://webtire-production.up.railway.app/promotions/13",
+        1: "https://webtire-production.up.railway.app/promotions/14", 
+        2: "https://webtire-production.up.railway.app/promotions/15",
+        3: "https://webtire-production.up.railway.app/promotions/16",
+        4: "https://webtire-production.up.railway.app/promotions/17",
+        5: "https://webtire-production.up.railway.app/promotions/18"
+    }
+
+    bubble = {
         "type": "bubble",
         "hero": {
             "type": "image",
@@ -392,11 +407,33 @@ def build_promotion_flex(promo):
             "layout": "vertical",
             "contents": [
                 {"type": "text", "text": promo.get("title", "-"), "weight": "bold", "size": "lg", "wrap": True},
-                {"type": "text", "text": promo.get("description", "-"), "size": "sm", "wrap": True, "margin": "md"},
+                {"type": "text", "text": description, "size": "sm", "wrap": True, "margin": "md"},
                 {"type": "text", "text": f"📅 {promo['start_date']} ถึง {promo['end_date']}", "size": "xs", "color": "#888888", "margin": "md"},
             ],
         },
     }
+    
+    # เพิ่มลิงก์สำหรับโปรโมชันที่มีลิงก์กำหนด
+    if index in promotion_links:
+        bubble["footer"] = {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "link",
+                    "height": "sm",
+                    "action": {
+                        "type": "uri",
+                        "label": "ดูรายละเอียดเพิ่มเติม",
+                        "uri": promotion_links[index]
+                    }
+                }
+            ]
+        }
+    
+    return bubble
 
 
 def send_tires_page(reply_token, user_id):
@@ -581,7 +618,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="เลือกเมนูที่ต้องการได้เลยค่ะ ",
-                    quick_reply=build_quick_reply_with_extra([
+                    quick_reply=build_quick_reply([
                         ("🚗 ยี่ห้อยางรถยนต์", "ยี่ห้อยางรถยนต์"),
                         ("🛠️ บริการ", "บริการ"),
                         ("🎉 โปรโมชัน", "โปรโมชัน"),
@@ -690,7 +727,7 @@ def handle_message(event):
                     ),
                     TextSendMessage(
                         text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                        quick_reply=build_quick_reply_with_extra(
+                        quick_reply=build_quick_reply(
                             [("🏠 เมนูหลัก", "แนะนำ"), ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
                         ),
                     ),
@@ -703,7 +740,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="ติดต่อเราได้ที่ ☎️ 044 611 097",
-                    quick_reply=build_quick_reply_with_extra(
+                    quick_reply=build_quick_reply(
                         [("🏠 เมนูหลัก", "แนะนำ"), ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
                     ),
                 ),
@@ -715,7 +752,7 @@ def handle_message(event):
                 reply_token,
                 TextSendMessage(
                     text="เวลาเปิดทำการ 🕗 วันจันทร์ - วันเสาร์ : 08:00 - 17:30",
-                    quick_reply=build_quick_reply_with_extra(
+                    quick_reply=build_quick_reply(
                         [("🏠 เมนูหลัก", "แนะนำ"), ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")]
                     ),
                 ),
@@ -755,7 +792,7 @@ def handle_message(event):
                     TextSendMessage(text="ขณะนี้ยังไม่มีโปรโมชันค่ะ"),
                 )
             else:
-                bubbles = [build_promotion_flex(p) for p in promotions[:10]]
+                bubbles = [build_promotion_flex(p, i) for i, p in enumerate(promotions[:10])]
                 carousel = {"type": "carousel", "contents": bubbles}
                 line_bot_api.reply_message(
                     reply_token,
@@ -819,7 +856,7 @@ def handle_sticker(event):
                 "ขอบคุณสำหรับสติ๊กเกอร์นะคะ 😊\n"
                 "ต้องการให้เราช่วยอะไรดีคะ👇"
             ),
-            quick_reply=build_quick_reply_with_extra(
+            quick_reply=build_quick_reply(
                 [
                     ("🚗 เริ่มต้นเลือกยาง", "แนะนำ"),
                     ("🛠️ บริการ", "บริการ"),
