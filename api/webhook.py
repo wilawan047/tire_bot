@@ -336,7 +336,7 @@ def build_michelin_model_flex():
         },
         {
             "name": "ENERGY XM2+",
-            "image": "https://webtire-production.up.railway.app/static/images/michelin-energy.jpg", 
+            "image": "https://webtire-production.up.railway.app/static/images/michelin-energy.jpg",
             "url": "https://webtire-production.up.railway.app/tires/michelin?model=ENERGY+XM2%2B"
         },
         {
@@ -1276,61 +1276,6 @@ def handle_message(event):
                     TextSendMessage(text="ไม่พบข้อมูลยี่ห้อยางในระบบ"),
                 )
 
-        # จัดการเมื่อเลือกยี่ห้อเฉพาะ
-        elif text == "Michelin":
-            set_user_mode(user_id, "menu")
-            carousel = build_michelin_model_flex()
-            line_bot_api.reply_message(
-                reply_token,
-                [
-                    FlexSendMessage(alt_text="เลือกรุ่นยาง Michelin", contents=carousel),
-                    TextSendMessage(
-                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                        quick_reply=build_quick_reply([
-                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                            ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                        ])
-                    )
-                ]
-            )
-
-        elif text == "BFGoodrich":
-            set_user_mode(user_id, "menu")
-            carousel = build_bfgoodrich_model_flex()
-            line_bot_api.reply_message(
-                reply_token,
-                [
-                    FlexSendMessage(alt_text="เลือกรุ่นยาง BFGoodrich", contents=carousel),
-                    TextSendMessage(
-                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                        quick_reply=build_quick_reply([
-                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                            ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                        ])
-                    )
-                ]
-            )
-
-        elif text == "Maxxis":
-            set_user_mode(user_id, "menu")
-            carousel = build_maxxis_model_flex()
-            line_bot_api.reply_message(
-                reply_token,
-                [
-                    FlexSendMessage(alt_text="เลือกรุ่นยาง Maxxis", contents=carousel),
-                    TextSendMessage(
-                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                        quick_reply=build_quick_reply([
-                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                            ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                        ])
-                    )
-                ]
-                )
-
         elif "รุ่น" in text:
             set_user_mode(user_id, "menu")
             brands = get_all_tire_brands()
@@ -1451,10 +1396,8 @@ def handle_message(event):
             print(f"Debug - Found model: {model}")
             print(f"Debug - Model name: {model.get('model_name', '')}")
             print(f"Debug - Brand name: {model.get('brand_name', '')}")
-            set_user_mode(user_id, "menu")
-            
-            # Debug: แสดงข้อความที่ผู้ใช้พิมพ์
             print(f"Debug - User input: '{text}'")
+            set_user_mode(user_id, "menu")
             
             # ดึงข้อมูลยางทั้งหมดของรุ่นนี้
             model_id = model.get("model_id")
@@ -1488,6 +1431,61 @@ def handle_message(event):
                 reply_token,
                 [
                     FlexSendMessage(alt_text=f"ข้อมูลยางรุ่น {model.get('model_name', '')}", contents=carousel),
+                    TextSendMessage(
+                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                        quick_reply=build_quick_reply([
+                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
+                ]
+            )
+
+        # จัดการเมื่อเลือกยี่ห้อเฉพาะ
+        elif text == "Michelin":
+            set_user_mode(user_id, "menu")
+            carousel = build_michelin_model_flex()
+            line_bot_api.reply_message(
+                reply_token,
+                [
+                    FlexSendMessage(alt_text="เลือกรุ่นยาง Michelin", contents=carousel),
+                    TextSendMessage(
+                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                        quick_reply=build_quick_reply([
+                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
+                ]
+            )
+
+        elif text == "BFGoodrich":
+            set_user_mode(user_id, "menu")
+            carousel = build_bfgoodrich_model_flex()
+            line_bot_api.reply_message(
+                reply_token,
+                [
+                    FlexSendMessage(alt_text="เลือกรุ่นยาง BFGoodrich", contents=carousel),
+                    TextSendMessage(
+                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                        quick_reply=build_quick_reply([
+                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                            ("🏠 เมนูหลัก", "แนะนำ"),
+                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                        ])
+                    )
+                ]
+            )
+
+        elif text == "Maxxis":
+            set_user_mode(user_id, "menu")
+            carousel = build_maxxis_model_flex()
+            line_bot_api.reply_message(
+                reply_token,
+                [
+                    FlexSendMessage(alt_text="เลือกรุ่นยาง Maxxis", contents=carousel),
                     TextSendMessage(
                         text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                         quick_reply=build_quick_reply([
