@@ -82,10 +82,20 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMAGE_DIR = os.path.join(BASE_DIR, "static", "images2")
 
 
-@app.route("/static/images2/<path:filename>")
-def custom_static(filename):
-    print("Serving:", os.path.join(IMAGE_DIR, filename))
-    return send_from_directory(IMAGE_DIR, filename)
+# เส้นทางสำหรับรูปใน uploads/tires
+@app.route("/static/uploads/tires/<path:filename>")
+def tires_static(filename):
+    tire_dir = os.path.join("static", "uploads", "tires")
+    file_path = os.path.join(tire_dir, filename)
+
+    if os.path.isfile(file_path):
+        return send_from_directory(tire_dir, filename)
+    else:
+        # fallback default
+        fallback = os.path.join(tire_dir, "default-tire.jpg")
+        if os.path.isfile(fallback):
+            return send_from_directory(tire_dir, "default-tire.jpg")
+        return "No Image Found", 404
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -106,45 +116,38 @@ def file_exists(filename):
 def get_image_url(filename):
     base_url = os.environ.get("BASE_URL", "").rstrip("/")
 
-    # External URLs pass through
+    # ถ้าเป็น URL จริง ให้ใช้เลย
     if filename and (str(filename).startswith("http://") or str(filename).startswith("https://")):
         return str(filename)
 
-    # Normalize and resolve subpath under static
+    # Normalize
     norm = (str(filename) if filename else "").replace("\\", "/").lstrip("/")
     if not norm:
-        norm = "images2/default-tire.jpg"
+        norm = "default-tire.jpg"
 
-    # Default directory is images2 if no subpath supplied
-    if "/" not in norm:
-        norm = f"images2/{norm}"
-
-    file_path = os.path.join("static", norm)
-    if not os.path.isfile(file_path):
-        print(f"❌ File missing: {norm}, ใช้ fallback image")
-        fallback_rel = "images2/default-tire.jpg"
-        fallback_abs = os.path.join("static", fallback_rel)
-        if os.path.isfile(fallback_abs):
-            norm = fallback_rel
-            file_path = fallback_abs
-        else:
+    tire_path = os.path.join("static", "uploads", "tires", norm)
+    if not os.path.isfile(tire_path):
+        # fallback
+        tire_path = os.path.join("static", "uploads", "tires", "default-tire.jpg")
+        if not os.path.isfile(tire_path):
             return "https://via.placeholder.com/400x300?text=No+Image"
+        norm = "default-tire.jpg"
 
-    # Build URL
-    if not base_url:
-        url = f"/static/{quote(norm)}"
+    # สร้าง URL
+    if base_url:
+        url = f"{base_url}/static/uploads/tires/{quote(norm)}"
     else:
-        url = f"{base_url}/static/{quote(norm)}"
+        url = f"/static/uploads/tires/{quote(norm)}"
 
-    # Cache-busting using mtime
+    # cache-busting ด้วย mtime
     try:
-        mtime = int(os.path.getmtime(file_path))
+        mtime = int(os.path.getmtime(tire_path))
         sep = "&" if "?" in url else "?"
         url = f"{url}{sep}v={mtime}"
     except Exception:
         pass
 
-    print("URL ที่ถูกสร้าง:", url)
+    print("IMAGE URL ที่สร้าง:", url)
     return url
 
 
