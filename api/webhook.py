@@ -911,7 +911,11 @@ def handle_message(event):
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_encoded = quote(model_name)
-                        model_url = f"https://webtire-production.up.railway.app/tires?brand={brand_encoded}&model={model_encoded}"
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
+                    elif brand_name:
+                        brand_lower = brand_name.lower()
+                        brand_encoded = quote(brand_lower)
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}"
                     else:
                         model_url = "https://webtire-production.up.railway.app/tires"
                     
@@ -1064,7 +1068,11 @@ def handle_message(event):
                         brand_lower = brand_name.lower()
                         brand_encoded = quote(brand_lower)
                         model_encoded = quote(model_name)
-                        model_url = f"https://webtire-production.up.railway.app/tires?brand={brand_encoded}&model={model_encoded}"
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
+                    elif brand_name:
+                        brand_lower = brand_name.lower()
+                        brand_encoded = quote(brand_lower)
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}"
                     else:
                         model_url = "https://webtire-production.up.railway.app/tires"
                     
