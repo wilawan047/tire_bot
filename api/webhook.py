@@ -841,12 +841,14 @@ def handle_message(event):
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
             set_user_mode(user_id, "menu")
             # ไม่ต้องไปเรียก Make integration แต่ให้ระบบทำงานต่อ
+            return
         
         # จัดการคำถามเพิ่มเติม (เรียก Make)
         elif text == "ถามเพิ่มเติม":
             # เปลี่ยน mode เป็น free_text เพื่อให้เรียก Make
             set_user_mode(user_id, "free_text")
             # ให้ระบบทำงานต่อเพื่อเรียก Make integration
+            return
         
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
@@ -1158,6 +1160,10 @@ def handle_message(event):
                 )
 
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
+            # Debug: แสดงข้อมูลรุ่นที่พบ
+            print(f"Debug - Found model: {model}")
+            print(f"Debug - Model name: {model.get('model_name', '')}")
+            print(f"Debug - Brand name: {model.get('brand_name', '')}")
             set_user_mode(user_id, "menu")
             
             # ดึงข้อมูลยางทั้งหมดของรุ่นนี้
@@ -1198,6 +1204,8 @@ def handle_message(event):
             )
 
         else:
+            # Debug: แสดงข้อความที่ไม่สามารถจับคู่ได้
+            print(f"Debug - No model match found for: '{text}'")
             # ลองค้นหารุ่นยางที่คล้ายกัน
             similar_models = []
             all_brands = get_all_tire_brands()
