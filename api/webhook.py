@@ -834,6 +834,9 @@ def handle_message(event):
     user_id = event.source.user_id
     mode = user_pages.get(user_id, {}).get("mode", "menu")
 
+    # Debug: แสดงข้อความที่ได้รับ
+    print(f"Received text: '{text}' from user: {user_id}")
+
     try:
         # In free_text mode, forward to Make unless user types a known navigation command
         if mode == "free_text":
@@ -1035,9 +1038,15 @@ def handle_message(event):
         elif (model := get_tire_model_by_name(text)) or (model := find_model_in_text(text)):
             set_user_mode(user_id, "menu")
             
+            # Debug: แสดงข้อมูลรุ่นที่พบ
+            print(f"Found model: {model}")
+            
             # ดึงข้อมูลยางทั้งหมดของรุ่นนี้
             model_id = model.get("model_id")
             tires = get_tires_by_model_id(model_id)
+            
+            # Debug: แสดงจำนวนยางที่พบ
+            print(f"Found {len(tires) if tires else 0} tires for model_id: {model_id}")
             
             if not tires:
                 line_bot_api.reply_message(
