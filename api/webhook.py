@@ -896,16 +896,78 @@ def handle_message(event):
             for b in brands:
                 models = get_tire_models_by_brand_id(b["brand_id"])
                 if models:
-                    all_models.extend([m["model_name"] for m in models])
+                    all_models.extend([m for m in models])
 
             if all_models:
-                bubble = build_selection_list_flex("📌 เลือกรุ่นยาง", all_models[:12])
+                # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
+                bubbles = []
+                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                    # สร้าง URL สำหรับแต่ละรุ่น
+                    from urllib.parse import quote
+                    brand_name = model.get('brand_name', '')
+                    model_name = model.get('model_name', '')
+                    
+                    if brand_name and model_name:
+                        brand_lower = brand_name.lower()
+                        brand_encoded = quote(brand_lower)
+                        model_encoded = quote(model_name)
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
+                    else:
+                        model_url = "https://webtire-production.up.railway.app/tires"
+                    
+                    # สร้าง Flex Bubble สำหรับแต่ละรุ่น
+                    bubble = {
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"{brand_name} {model_name}",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "wrap": True,
+                                    "color": "#0B4F6C"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"หมวด: {model.get('tire_category', 'ไม่ระบุ')}",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "margin": "sm"
+                                }
+                            ]
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "spacing": "sm",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "style": "link",
+                                    "height": "sm",
+                                    "action": {
+                                        "type": "uri",
+                                        "label": "🔗 ดูรายละเอียดและราคา",
+                                        "uri": model_url
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                    bubbles.append(bubble)
+                
+                # สร้าง Carousel
+                carousel = {"type": "carousel", "contents": bubbles}
+                
                 line_bot_api.reply_message(
                     reply_token,
                     [
                         FlexSendMessage(
                             alt_text="เลือกรุ่นยาง",
-                            contents=bubble
+                            contents=carousel
                         ),
                         TextSendMessage(
                             text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
@@ -983,17 +1045,83 @@ def handle_message(event):
         elif "รุ่น" in text:
             set_user_mode(user_id, "menu")
             brands = get_all_tire_brands()
-            all_buttons = []
+            all_models = []
             for b in brands:
                 models = get_tire_models_by_brand_id(b["brand_id"])
                 if models:
-                    all_buttons.extend([m["model_name"] for m in models[:5]])
-            if all_buttons:
-                bubble = build_selection_list_flex("📌 เลือกรุ่นยาง", all_buttons[:12])
+                    all_models.extend([m for m in models])
+
+            if all_models:
+                # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
+                bubbles = []
+                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                    # สร้าง URL สำหรับแต่ละรุ่น
+                    from urllib.parse import quote
+                    brand_name = model.get('brand_name', '')
+                    model_name = model.get('model_name', '')
+                    
+                    if brand_name and model_name:
+                        brand_lower = brand_name.lower()
+                        brand_encoded = quote(brand_lower)
+                        model_encoded = quote(model_name)
+                        model_url = f"https://webtire-production.up.railway.app/tires/{brand_encoded}?model={model_encoded}"
+                    else:
+                        model_url = "https://webtire-production.up.railway.app/tires"
+                    
+                    # สร้าง Flex Bubble สำหรับแต่ละรุ่น
+                    bubble = {
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"{brand_name} {model_name}",
+                                    "weight": "bold",
+                                    "size": "lg",
+                                    "wrap": True,
+                                    "color": "#0B4F6C"
+                                },
+                                {
+                                    "type": "text",
+                                    "text": f"หมวด: {model.get('tire_category', 'ไม่ระบุ')}",
+                                    "size": "sm",
+                                    "color": "#666666",
+                                    "margin": "sm"
+                                }
+                            ]
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "spacing": "sm",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "style": "link",
+                                    "height": "sm",
+                                    "action": {
+                                        "type": "uri",
+                                        "label": "🔗 ดูรายละเอียดและราคา",
+                                        "uri": model_url
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                    bubbles.append(bubble)
+                
+                # สร้าง Carousel
+                carousel = {"type": "carousel", "contents": bubbles}
+                
                 line_bot_api.reply_message(
-                    reply_token, 
+                    reply_token,
                     [
-                        FlexSendMessage(alt_text="เลือกรุ่นยาง", contents=bubble),
+                        FlexSendMessage(
+                            alt_text="เลือกรุ่นยาง",
+                            contents=carousel
+                        ),
                         TextSendMessage(
                             text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
                             quick_reply=build_quick_reply([
@@ -1190,8 +1318,8 @@ def handle_message(event):
                 TextSendMessage(
                     text=(
                         "คุณสามารถพิมพ์คำถามอะไรก็ได้เลยค่ะ เช่น:\n"
-                        "- รุ่นยางสำหรับรถเก๋ง\n"
-                        "- บริการเปลี่ยนถ่ายน้ำมันเครื่อง\n"
+                        "- ยางสำหรับรถเก๋ง\n"
+                        "- บริการทางร้าน\n"
                         "- โปรโมชั่นเดือนนี้"
                     ),
                     quick_reply=build_quick_reply_with_extra(
