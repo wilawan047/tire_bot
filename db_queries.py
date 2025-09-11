@@ -128,3 +128,53 @@ def get_services_by_category(category_name):
         print(f"Error getting services by category: {err}")
         return []
     finally: conn.close()
+
+
+def get_models_by_brand(brand_name):
+    """ดึงข้อมูลรุ่นยางทั้งหมดของแบรนด์ที่ระบุ"""
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT tm.model_id, tm.model_name, tm.tire_category, b.brand_name
+            FROM tire_models tm
+            LEFT JOIN brands b ON tm.brand_id = b.brand_id
+            WHERE b.brand_name = %s
+            ORDER BY tm.model_name
+        """, (brand_name,))
+        return cursor.fetchall()
+    except mysql.connector.Error as err:
+        print(f"Error getting models by brand: {err}")
+        return []
+    finally: conn.close()
+
+
+def get_tire_model_image(model_name):
+    """ดึงรูปภาพของรุ่นยางจากฐานข้อมูล"""
+    conn = get_db_connection()
+    if not conn: return "https://placeholder.vercel.app/images/default-tire.jpg"
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT t.tire_image_url
+            FROM tires t
+            LEFT JOIN tire_models tm ON t.model_id = tm.model_id
+            WHERE tm.model_name = %s
+            LIMIT 1
+        """, (model_name,))
+        result = cursor.fetchone()
+        
+        if result and result.get("tire_image_url"):
+            # สร้าง URL รูปภาพโดยตรง
+            image_url = result["tire_image_url"]
+            if image_url.startswith("http"):
+                return image_url
+            else:
+                return f"https://webtire-production.up.railway.app/static/uploads/tires/{image_url}"
+        else:
+            return "https://placeholder.vercel.app/images/default-tire.jpg"
+    except mysql.connector.Error as err:
+        print(f"Error getting tire model image: {err}")
+        return "https://placeholder.vercel.app/images/default-tire.jpg"
+    finally: conn.close()
