@@ -991,7 +991,7 @@ def send_tires_page(reply_token, user_id):
         line_bot_api.reply_message(reply_token, TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อน"))
         return
 
-    page_size = 10
+    page_size = 8  # ลดลงเพื่อให้ไม่เกิน 12 รายการที่ LINE Bot จำกัด
     page = user_pages[user_id]["page"]
     model_id = user_pages[user_id]["model_id"]
 
@@ -1706,35 +1706,10 @@ def handle_message(event):
                     )
                 return
             
-            # สร้าง Flex Message สำหรับแต่ละยาง
-            bubbles = []
-            for tire in tires:
-                # เพิ่มข้อมูลยี่ห้อและรุ่นใน tire object
-                tire['brand_name'] = model.get("brand_name", "")
-                tire['model_name'] = model.get("model_name", "")
-                print(f"Debug - Tire brand: {tire.get('brand_name', '')}, model: {tire.get('model_name', '')}")
-                tire_flex = build_tire_flex(tire)
-                bubbles.append(tire_flex)
-            
-            print(f"Debug - Created {len(bubbles)} bubbles")
-            
-            # สร้าง carousel
-            carousel = {"type": "carousel", "contents": bubbles}
-            
-            line_bot_api.reply_message(
-                reply_token,
-                [
-                    FlexSendMessage(alt_text=f"ข้อมูลยางรุ่น {model.get('model_name', '')}", contents=carousel),
-                    TextSendMessage(
-                        text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                        quick_reply=build_quick_reply([
-                            ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                            ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                        ])
-                    )
-                ]
-            )
+            # ใช้ pagination system แทนการสร้าง bubbles ทั้งหมด
+            model_id = model.get("model_id")
+            user_pages[user_id] = {"page": 1, "model_id": model_id}
+            send_tires_page(reply_token, user_id)
 
         # จัดการเมื่อเลือกยี่ห้อเฉพาะ
         elif text == "Michelin":
