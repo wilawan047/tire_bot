@@ -1322,7 +1322,7 @@ def handle_message(event):
             if all_models:
                 # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
                 bubbles = []
-                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                for model in all_models[:6]:  # จำกัดไว้ 6 รุ่น เพื่อให้ไม่เกิน 12 bubbles
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
@@ -1337,6 +1337,14 @@ def handle_message(event):
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
+                            
+                            # จำกัดจำนวน bubbles ไม่เกิน 12
+                            if len(bubbles) >= 12:
+                                break
+                    
+                    # จำกัดจำนวน bubbles ไม่เกิน 12
+                    if len(bubbles) >= 12:
+                        break
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
                         bubble = {
@@ -1469,7 +1477,7 @@ def handle_message(event):
             if all_models:
                 # สร้าง Flex Message สำหรับแต่ละรุ่นยาง
                 bubbles = []
-                for model in all_models[:12]:  # จำกัดไว้ 12 รุ่น
+                for model in all_models[:6]:  # จำกัดไว้ 6 รุ่น เพื่อให้ไม่เกิน 12 bubbles
                     brand_name = model.get('brand_name', '')
                     model_name = model.get('model_name', '')
                     
@@ -1484,6 +1492,14 @@ def handle_message(event):
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
+                            
+                            # จำกัดจำนวน bubbles ไม่เกิน 12
+                            if len(bubbles) >= 12:
+                                break
+                    
+                    # จำกัดจำนวน bubbles ไม่เกิน 12
+                    if len(bubbles) >= 12:
+                        break
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
                         bubble = {
@@ -1616,31 +1632,10 @@ def handle_message(event):
                 sample_tires = create_sample_tires_for_model(model_name, brand_name, tire_category)
                 
                 if sample_tires:
-                    # สร้าง Flex Message สำหรับแต่ละยางตัวอย่าง
-                    bubbles = []
-                    for tire in sample_tires:
-                        tire['brand_name'] = brand_name
-                        tire['model_name'] = model_name
-                        tire_flex = build_tire_flex(tire)
-                        bubbles.append(tire_flex)
-                    
-                    carousel = {"type": "carousel", "contents": bubbles}
-                    
-                    line_bot_api.reply_message(
-                        reply_token,
-                        [
-                            FlexSendMessage(alt_text=f"ข้อมูลยางรุ่น {model_name}", contents=carousel),
-                            TextSendMessage(
-                                text="📞 สำหรับข้อมูลที่แน่นอน กรุณาติดต่อร้านเพื่อสอบถามเพิ่มเติม",
-                                quick_reply=build_quick_reply([
-                                    ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
-                                    ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                                    ("🏠 เมนูหลัก", "แนะนำ"),
-                                    ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                                ])
-                            )
-                        ]
-                    )
+                    # ใช้ pagination system สำหรับข้อมูลยางตัวอย่าง
+                    model_id = model.get("model_id")
+                    user_pages[user_id] = {"page": 1, "model_id": model_id}
+                    send_tires_page(reply_token, user_id)
                 else:
                     # ถ้าไม่สามารถสร้างข้อมูลตัวอย่างได้ ให้แสดงข้อมูลรุ่นยางแบบง่าย
                     bubble = {
@@ -1798,6 +1793,14 @@ def handle_message(event):
                             tire['brand_name'] = brand_name
                             tire_flex = build_tire_flex(tire)
                             bubbles.append(tire_flex)
+                            
+                            # จำกัดจำนวน bubbles ไม่เกิน 12
+                            if len(bubbles) >= 12:
+                                break
+                    
+                    # จำกัดจำนวน bubbles ไม่เกิน 12
+                    if len(bubbles) >= 12:
+                        break
                     else:
                         # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่น
                         bubble = {
