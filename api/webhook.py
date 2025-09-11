@@ -746,6 +746,177 @@ def get_tire_model_name_by_id(model_id):
         return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
 
 
+def create_sample_tires_for_model(model_name, brand_name, tire_category):
+    """สร้างข้อมูลยางตัวอย่างสำหรับรุ่นที่ไม่มีข้อมูลในฐานข้อมูล"""
+    print(f"Debug - Creating sample tires for {brand_name} {model_name}")
+    
+    # กำหนดข้อมูลยางตัวอย่างตามรุ่น
+    sample_tires = []
+    
+    if brand_name.lower() == "michelin":
+        if model_name.upper() == "EXM2+":
+            sample_tires = [
+                {
+                    "tire_id": 9991,
+                    "full_size": "175/70 R13 82T TL",
+                    "load_index": "82",
+                    "speed_symbol": "T",
+                    "ply_rating": None,
+                    "price_each": 2750.00,
+                    "price_set": 11000.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 9992,
+                    "full_size": "185/70 R13 86T TL",
+                    "load_index": "86",
+                    "speed_symbol": "T",
+                    "ply_rating": None,
+                    "price_each": 2850.00,
+                    "price_set": 11400.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 9993,
+                    "full_size": "165/65 R14 79H TL",
+                    "load_index": "79",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 2850.00,
+                    "price_set": 11400.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 9994,
+                    "full_size": "185/60 R14 82H TL",
+                    "load_index": "82",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 3300.00,
+                    "price_set": 13200.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 9995,
+                    "full_size": "195/60 R14 86H TL",
+                    "load_index": "86",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 3600.00,
+                    "price_set": 14400.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                }
+            ]
+        elif model_name.upper() == "ENERGY XM2+":
+            sample_tires = [
+                {
+                    "tire_id": 9996,
+                    "full_size": "175/65 R15 84H TL",
+                    "load_index": "84",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 2650.00,
+                    "price_set": 10600.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 9997,
+                    "full_size": "185/60 R15 84H TL",
+                    "load_index": "84",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 2650.00,
+                    "price_set": 10600.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                }
+            ]
+        elif model_name.upper() == "AGILIS3":
+            sample_tires = [
+                {
+                    "tire_id": 9998,
+                    "full_size": "195/80 R14 106/104R",
+                    "load_index": "106/104",
+                    "speed_symbol": "R",
+                    "ply_rating": None,
+                    "price_each": 2700.00,
+                    "price_set": 10800.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_AGILIS_3.png"
+                },
+                {
+                    "tire_id": 9999,
+                    "full_size": "205/75 R14C 109/107R TL",
+                    "load_index": "109/107",
+                    "speed_symbol": "R",
+                    "ply_rating": None,
+                    "price_each": 3300.00,
+                    "price_set": 13200.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_AGILIS_3.png"
+                }
+            ]
+        elif model_name.upper() == "XCD2":
+            sample_tires = [
+                {
+                    "tire_id": 10000,
+                    "full_size": "205/75 R14C 109/107P TL PR8",
+                    "load_index": "109/107",
+                    "speed_symbol": "P",
+                    "ply_rating": "PR8",
+                    "price_each": 3450.00,
+                    "price_set": 13800.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_XCD_2.png"
+                },
+                {
+                    "tire_id": 10001,
+                    "full_size": "215/75 R14C 112/110P TL PR8",
+                    "load_index": "112/110",
+                    "speed_symbol": "P",
+                    "ply_rating": "PR8",
+                    "price_each": 3850.00,
+                    "price_set": 15400.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_XCD_2.png"
+                }
+            ]
+        elif model_name.upper() == "PRIMACRY SUV+":
+            sample_tires = [
+                {
+                    "tire_id": 10002,
+                    "full_size": "205/70 R15 96H TL",
+                    "load_index": "96",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 4650.00,
+                    "price_set": 18600.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_PRIMACRY_SUV+.png"
+                },
+                {
+                    "tire_id": 10003,
+                    "full_size": "215/70 R16 100H TL",
+                    "load_index": "100",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 5750.00,
+                    "price_set": 23000.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_PRIMACRY_SUV+.png"
+                }
+            ]
+    
+    print(f"Debug - Created {len(sample_tires)} sample tires")
+    return sample_tires
+
+
 
 def build_promotion_flex(promo, index=0):
     image_url = get_image_url(promo.get("image_url"))
@@ -1424,74 +1595,104 @@ def handle_message(event):
             
             print(f"Debug - Found {len(tires)} tires for model {model.get('model_name', '')}")
             
+            # ถ้าไม่มีข้อมูลยาง ให้สร้างข้อมูลยางตัวอย่าง
             if not tires:
-                # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่นยางแบบง่าย
                 brand_name = model.get("brand_name", "")
                 model_name = model.get("model_name", "")
                 tire_category = model.get("tire_category", "ไม่ระบุ")
                 
-                # สร้าง Flex Message แสดงข้อมูลรุ่นยาง
-                bubble = {
-                    "type": "bubble",
-                    "body": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": f"{brand_name} {model_name}",
-                                "weight": "bold",
-                                "size": "xl",
-                                "wrap": True,
-                                "color": "#0B4F6C",
-                            },
-                            {"type": "separator", "margin": "md"},
-                            {
-                                "type": "box",
-                                "layout": "vertical",
-                                "margin": "md",
-                                "spacing": "sm",
-                                "contents": [
-                                    {"type": "text", "text": f"หมวด: {tire_category}"},
-                                    {"type": "text", "text": "ไม่พบข้อมูลยางในระบบ", "color": "#FF6B6B"},
-                                    {"type": "text", "text": "กรุณาติดต่อร้านเพื่อสอบถามข้อมูลเพิ่มเติม", "size": "sm", "color": "#666666"},
-                                ],
-                            },
-                        ],
-                    },
-                    "footer": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "spacing": "sm",
-                        "contents": [
-                            {
-                                "type": "button",
-                                "style": "link",
-                                "height": "sm",
-                                "action": {
-                                    "type": "uri",
-                                    "label": "📞 ติดต่อร้าน",
-                                    "uri": "tel:044611097"
-                                }
-                            }
-                        ]
-                    }
-                }
+                # สร้างข้อมูลยางตัวอย่างสำหรับรุ่นที่ไม่มีข้อมูล
+                sample_tires = create_sample_tires_for_model(model_name, brand_name, tire_category)
                 
-                line_bot_api.reply_message(
-                    reply_token,
-                    [
-                        FlexSendMessage(alt_text=f"ข้อมูลรุ่น {model_name}", contents=bubble),
-                        TextSendMessage(
-                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
-                            quick_reply=build_quick_reply([
-                                ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
-                                ("🏠 เมนูหลัก", "แนะนำ"),
-                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                            ])
-                        )
-                    ]
-                )
+                if sample_tires:
+                    # สร้าง Flex Message สำหรับแต่ละยางตัวอย่าง
+                    bubbles = []
+                    for tire in sample_tires:
+                        tire['brand_name'] = brand_name
+                        tire['model_name'] = model_name
+                        tire_flex = build_tire_flex(tire)
+                        bubbles.append(tire_flex)
+                    
+                    carousel = {"type": "carousel", "contents": bubbles}
+                    
+                    line_bot_api.reply_message(
+                        reply_token,
+                        [
+                            FlexSendMessage(alt_text=f"ข้อมูลยางรุ่น {model_name}", contents=carousel),
+                            TextSendMessage(
+                                text="📞 สำหรับข้อมูลที่แน่นอน กรุณาติดต่อร้านเพื่อสอบถามเพิ่มเติม",
+                                quick_reply=build_quick_reply([
+                                    ("📞 ติดต่อร้าน", "ติดต่อร้าน"),
+                                    ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                                    ("🏠 เมนูหลัก", "แนะนำ"),
+                                    ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                                ])
+                            )
+                        ]
+                    )
+                else:
+                    # ถ้าไม่สามารถสร้างข้อมูลตัวอย่างได้ ให้แสดงข้อมูลรุ่นยางแบบง่าย
+                    bubble = {
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "text",
+                                    "text": f"{brand_name} {model_name}",
+                                    "weight": "bold",
+                                    "size": "xl",
+                                    "wrap": True,
+                                    "color": "#0B4F6C",
+                                },
+                                {"type": "separator", "margin": "md"},
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "margin": "md",
+                                    "spacing": "sm",
+                                    "contents": [
+                                        {"type": "text", "text": f"หมวด: {tire_category}"},
+                                        {"type": "text", "text": "ไม่พบข้อมูลยางในระบบ", "color": "#FF6B6B"},
+                                        {"type": "text", "text": "กรุณาติดต่อร้านเพื่อสอบถามข้อมูลเพิ่มเติม", "size": "sm", "color": "#666666"},
+                                    ],
+                                },
+                            ],
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "spacing": "sm",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "style": "link",
+                                    "height": "sm",
+                                    "action": {
+                                        "type": "uri",
+                                        "label": "📞 ติดต่อร้าน",
+                                        "uri": "tel:044611097"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                    
+                    line_bot_api.reply_message(
+                        reply_token,
+                        [
+                            FlexSendMessage(alt_text=f"ข้อมูลรุ่น {model_name}", contents=bubble),
+                            TextSendMessage(
+                                text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                                quick_reply=build_quick_reply([
+                                    ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                                    ("🏠 เมนูหลัก", "แนะนำ"),
+                                    ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                                ])
+                            )
+                        ]
+                    )
                 return
             
             # สร้าง Flex Message สำหรับแต่ละยาง
