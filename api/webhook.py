@@ -1606,6 +1606,13 @@ def handle_message(event):
                 tires = get_tires_by_model_name(model_name)
                 print(f"Debug - Found {len(tires)} tires by model name for {model_name}")
             
+            # ถ้ามีข้อมูลยาง ให้ใช้ pagination system
+            if tires:
+                print(f"Debug - Using pagination system for {len(tires)} tires")
+                user_pages[user_id] = {"page": 1, "model_id": model_id}
+                send_tires_page(reply_token, user_id)
+                return
+            
             # ถ้ายังไม่มีข้อมูลยาง ให้สร้างข้อมูลยางตัวอย่าง
             if not tires:
                 brand_name = model.get("brand_name", "")
@@ -1684,11 +1691,6 @@ def handle_message(event):
                         ]
                     )
                 return
-            
-            # ใช้ pagination system แทนการสร้าง bubbles ทั้งหมด
-            model_id = model.get("model_id")
-            user_pages[user_id] = {"page": 1, "model_id": model_id}
-            send_tires_page(reply_token, user_id)
 
         # จัดการเมื่อเลือกยี่ห้อเฉพาะ
         elif text == "Michelin":
