@@ -1750,6 +1750,7 @@ def handle_message(event):
         elif "บริการ" in text.lower() or "service" in text.lower():
             set_user_mode(user_id, "menu")
             service_categories = get_all_service_categories()
+            print(f"Debug - Found {len(service_categories)} service categories: {[cat['category'] for cat in service_categories]}")
             if service_categories:
                 bubble = build_selection_list_flex("🛠️ เลือกบริการ", [cat["category"] for cat in service_categories[:12]])
                 line_bot_api.reply_message(
@@ -1771,7 +1772,9 @@ def handle_message(event):
                     TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ"),
                 )
 
+        # ตรวจสอบการเลือกหมวดหมู่บริการ (ย้ายขึ้นมาก่อนส่วนอื่น)
         elif (category := get_services_by_category(text)):
+            print(f"Debug - Found service category: '{text}' with {len(category)} services")
             set_user_mode(user_id, "menu")
             flex_content = build_service_list_flex(text, category)
             flex_msg = FlexSendMessage(alt_text=f"บริการหมวด {text}", contents=flex_content)
