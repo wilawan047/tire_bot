@@ -285,7 +285,7 @@ def build_tire_flex(tire):
             "contents": [
                 {
                     "type": "text",
-                    "text": model_name_clean or tire.get('model_name', '') or "ไม่ทราบรุ่น",
+                    "text": model_name_clean or tire.get('model_name', '') or "Unknown Model",
                     "weight": "bold",
                     "size": "xl",
                     "wrap": True,
@@ -660,27 +660,9 @@ def build_service_list_flex(category_name, services):
 
 
 def get_tire_model_name_by_id(model_id):
-    try:
-        conn = mysql.connector.connect(**config.DB_CONFIG)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            """
-            SELECT tm.model_id, tm.model_name, tm.tire_category, b.brand_name
-            FROM tire_models tm
-            LEFT JOIN brands b ON tm.brand_id = b.brand_id
-            WHERE tm.model_id = %s
-            """,
-            (model_id,),
-        )
-        result = cursor.fetchone()
-        conn.close()
-        if result:
-            return result
-        else:
-            return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
-    except Exception as e:
-        print(f"Error in get_tire_model_name_by_id: {e}")
-        return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
+    """ดึงชื่อรุ่นยางตาม model_id"""
+    from db_queries import get_tire_model_name_by_id as db_get_tire_model_name_by_id
+    return db_get_tire_model_name_by_id(model_id)
 
 
 def create_sample_tires_for_model(model_name, brand_name, tire_category):
@@ -1009,8 +991,9 @@ def send_tires_page(reply_token, user_id):
 
     bubbles = []
     for t in tires_page:
-        # เพิ่มข้อมูลยี่ห้อใน tire object
+        # เพิ่มข้อมูลยี่ห้อและรุ่นใน tire object
         t['brand_name'] = tire_model.get("brand_name", "")
+        t['model_name'] = tire_model.get("model_name", "")
         tire_flex = build_tire_flex(t)
         bubbles.append(tire_flex)
     carousel = {"type": "carousel", "contents": bubbles}
