@@ -72,6 +72,9 @@ def get_tires_by_model_id(model_id):
         """, (model_id,))
         result = cur.fetchall()
         print(f"Debug - get_tires_by_model_id: Found {len(result)} tires for model_id {model_id}")
+        
+        # แสดงข้อมูลตามที่มีจริงในฐานข้อมูล ไม่เพิ่มเติม
+        
         return result
     except mysql.connector.Error as err:
         print(f"Error getting tires by model ID: {err}")
@@ -119,6 +122,19 @@ def get_tires_by_model_name(model_name):
             """)
             result = cur.fetchall()
             print(f"Debug - Fallback found {len(result)} tires for ENERGY XM2+")
+        elif not result and model_name.upper() == "PRIMACRY SUV+":
+            print("Debug - Trying fallback for PRIMACRY SUV+ with model_id = 5")
+            # สำหรับ PRIMACRY SUV+ ให้ดึงข้อมูลยางที่ใช้ model_id = 5
+            cur.execute("""
+                SELECT tire_id, model_id, full_size, load_index, speed_symbol, ply_rating, 
+                       price_each, price_set, promotion_price, tire_image_url
+                FROM tires
+                WHERE model_id = 5
+            """)
+            result = cur.fetchall()
+            print(f"Debug - Fallback found {len(result)} tires for PRIMACRY SUV+")
+            
+            # แสดงข้อมูลตามที่มีจริงในฐานข้อมูล ไม่เพิ่มเติม
         
         return result
     except mysql.connector.Error as err:
