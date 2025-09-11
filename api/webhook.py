@@ -121,23 +121,16 @@ def get_image_url(filename):
     if not norm:
         norm = "default-tire.jpg"
 
-    tire_path = os.path.join("static", "uploads", "tires", norm)
-    if not os.path.isfile(tire_path):
-        # fallback
-        tire_path = os.path.join("static", "uploads", "tires", "default-tire.jpg")
-        if not os.path.isfile(tire_path):
-            return "https://via.placeholder.com/400x300?text=No+Image"
-        norm = "default-tire.jpg"
-
-    # สร้าง URL
+    # สร้าง URL โดยไม่ตรวจสอบไฟล์ (เพราะใน production ไม่สามารถเข้าถึงไฟล์ได้)
     if base_url:
         url = f"{base_url}/static/uploads/tires/{quote(norm)}"
     else:
         url = f"/static/uploads/tires/{quote(norm)}"
 
-    # cache-busting ด้วย mtime
+    # cache-busting ด้วย timestamp
+    import time
     try:
-        mtime = int(os.path.getmtime(tire_path))
+        mtime = int(time.time())
         sep = "&" if "?" in url else "?"
         url = f"{url}{sep}v={mtime}"
     except Exception:
@@ -1880,15 +1873,21 @@ def handle_message(event):
             set_user_mode(user_id, "menu")
             try:
                 page_num = int(text.split("_")[1])
-                if user_id in user_pages:
+                print(f"Debug - Page navigation: user_id={user_id}, page={page_num}")
+                print(f"Debug - user_pages: {user_pages}")
+                
+                if user_id in user_pages and "model_id" in user_pages[user_id]:
                     user_pages[user_id]["page"] = page_num
+                    print(f"Debug - Updated page to {page_num} for user {user_id}")
                     send_tires_page(reply_token, user_id)
                 else:
+                    print(f"Debug - User {user_id} not found in user_pages or missing model_id")
                     line_bot_api.reply_message(
                         reply_token,
                         TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ"),
                     )
             except Exception as e:
+                print(f"Debug - Error in page navigation: {e}")
                 line_bot_api.reply_message(
                     reply_token,
                     TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"),
