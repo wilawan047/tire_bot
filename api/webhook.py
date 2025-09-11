@@ -111,7 +111,11 @@ def file_exists(filename):
 
 def get_image_url(filename):
     # ใช้ BASE_URL ที่กำหนดไว้ในไฟล์
-    base_url = BASE_URL
+    base_url = BASE_URL.rstrip("/")
+    
+    # ลบ /app ออกถ้ามี (สำหรับ Railway deployment)
+    if base_url.endswith("/app"):
+        base_url = base_url[:-4]
 
     # ถ้าเป็น URL จริง ให้ใช้เลย
     if filename and (str(filename).startswith("http://") or str(filename).startswith("https://")):
