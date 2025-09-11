@@ -51,7 +51,9 @@ def get_tire_model_by_name(model_name):
             LEFT JOIN brands b ON tm.brand_id = b.brand_id
             WHERE LOWER(tm.model_name) = LOWER(%s)
         """, (model_name,))
-        return cur.fetchone()
+        result = cur.fetchone()
+        print(f"Debug - get_tire_model_by_name: Found model '{model_name}' -> {result}")
+        return result
     except mysql.connector.Error as err:
         print(f"Error getting tire model by name: {err}")
         return None
@@ -68,7 +70,9 @@ def get_tires_by_model_id(model_id):
             FROM tires
             WHERE model_id = %s
         """, (model_id,))
-        return cur.fetchall()
+        result = cur.fetchall()
+        print(f"Debug - get_tires_by_model_id: Found {len(result)} tires for model_id {model_id}")
+        return result
     except mysql.connector.Error as err:
         print(f"Error getting tires by model ID: {err}")
         return []
@@ -90,8 +94,11 @@ def get_tires_by_model_name(model_name):
         """, (model_name,))
         result = cur.fetchall()
         
+        print(f"Debug - get_tires_by_model_name: Found {len(result)} tires for '{model_name}'")
+        
         # ถ้าไม่พบข้อมูล ให้ลองค้นหาด้วยชื่อรุ่นที่คล้ายกัน
         if not result and model_name.upper() == "EXM2+":
+            print("Debug - Trying fallback for EXM2+ with model_id = 1")
             # สำหรับ EXM2+ ให้ดึงข้อมูลยางที่ใช้ model_id = 1
             cur.execute("""
                 SELECT tire_id, model_id, full_size, load_index, speed_symbol, ply_rating, 
@@ -100,7 +107,9 @@ def get_tires_by_model_name(model_name):
                 WHERE model_id = 1
             """)
             result = cur.fetchall()
+            print(f"Debug - Fallback found {len(result)} tires for EXM2+")
         elif not result and model_name.upper() == "ENERGY XM2+":
+            print("Debug - Trying fallback for ENERGY XM2+ with model_id = 2")
             # สำหรับ ENERGY XM2+ ให้ดึงข้อมูลยางที่ใช้ model_id = 2
             cur.execute("""
                 SELECT tire_id, model_id, full_size, load_index, speed_symbol, ply_rating, 
@@ -109,6 +118,7 @@ def get_tires_by_model_name(model_name):
                 WHERE model_id = 2
             """)
             result = cur.fetchall()
+            print(f"Debug - Fallback found {len(result)} tires for ENERGY XM2+")
         
         return result
     except mysql.connector.Error as err:
@@ -213,10 +223,36 @@ def get_tire_model_image(model_name):
             if image_url.startswith("http"):
                 return image_url
             else:
-                return f"https://webtire-production.up.railway.app/static/uploads/tires/{image_url}"
+                # แก้ไขชื่อไฟล์รูปภาพให้ถูกต้องตามรุ่นยาง
+                if model_name.upper() == "EXM2+":
+                    # ใช้รูปภาพที่เหมาะสมสำหรับ EXM2+
+                    return "https://webtire-production.up.railway.app/static/uploads/tires/Michelin_ENERGY_XM2_+_EXM2+.png"
+                elif model_name.upper() == "ENERGY XM2+":
+                    # ใช้รูปภาพที่เหมาะสมสำหรับ ENERGY XM2+
+                    return "https://webtire-production.up.railway.app/static/uploads/tires/Michelin_ENERGY_XM2_+_EXM2+.png"
+                else:
+                    return f"https://webtire-production.up.railway.app/static/uploads/tires/{image_url}"
         else:
             return "https://placeholder.vercel.app/images/default-tire.jpg"
     except mysql.connector.Error as err:
         print(f"Error getting tire model image: {err}")
         return "https://placeholder.vercel.app/images/default-tire.jpg"
+    finally: conn.close()
+
+def get_tire_model_name_by_id(model_id):
+    """ดึงชื่อรุ่นยางตาม model_id"""
+    conn = get_db_connection()
+    if not conn: return None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT tm.model_id, tm.model_name, tm.tire_category, b.brand_name
+            FROM tire_models tm
+            LEFT JOIN brands b ON tm.brand_id = b.brand_id
+            WHERE tm.model_id = %s
+        """, (model_id,))
+        return cursor.fetchone()
+    except mysql.connector.Error as err:
+        print(f"Error getting tire model by ID: {err}")
+        return None
     finally: conn.close()
