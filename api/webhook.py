@@ -23,6 +23,7 @@ from db_queries import (
     get_tire_models_by_brand_id,
     get_tire_model_by_name,
     get_tires_by_model_id,
+    get_tires_by_model_name,
     get_all_service_categories,
     get_services_by_category,
     get_models_by_brand,
@@ -691,9 +692,10 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
     
     if brand_name.lower() == "michelin":
         if model_name.upper() == "EXM2+":
+            # ใช้ข้อมูลยางจากฐานข้อมูลที่ใช้ model_id = 1
             sample_tires = [
                 {
-                    "tire_id": 9991,
+                    "tire_id": 42,
                     "full_size": "175/70 R13 82T TL",
                     "load_index": "82",
                     "speed_symbol": "T",
@@ -704,7 +706,7 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 },
                 {
-                    "tire_id": 9992,
+                    "tire_id": 43,
                     "full_size": "185/70 R13 86T TL",
                     "load_index": "86",
                     "speed_symbol": "T",
@@ -715,7 +717,7 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 },
                 {
-                    "tire_id": 9993,
+                    "tire_id": 44,
                     "full_size": "165/65 R14 79H TL",
                     "load_index": "79",
                     "speed_symbol": "H",
@@ -726,7 +728,40 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 },
                 {
-                    "tire_id": 9994,
+                    "tire_id": 45,
+                    "full_size": "165/70 R14 81T TL",
+                    "load_index": "81",
+                    "speed_symbol": "T",
+                    "ply_rating": None,
+                    "price_each": 2950.00,
+                    "price_set": 11800.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 46,
+                    "full_size": "175/65 R14 82H TL",
+                    "load_index": "82",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 2950.00,
+                    "price_set": 11800.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 47,
+                    "full_size": "175/70 R14 88T XL TL",
+                    "load_index": "88",
+                    "speed_symbol": "T",
+                    "ply_rating": None,
+                    "price_each": 3250.00,
+                    "price_set": 13000.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 48,
                     "full_size": "185/60 R14 82H TL",
                     "load_index": "82",
                     "speed_symbol": "H",
@@ -737,7 +772,29 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 },
                 {
-                    "tire_id": 9995,
+                    "tire_id": 49,
+                    "full_size": "185/65 R14 86H TL",
+                    "load_index": "86",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 3100.00,
+                    "price_set": 12400.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 50,
+                    "full_size": "185/70 R14 88H TL",
+                    "load_index": "88",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 3300.00,
+                    "price_set": 13200.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 51,
                     "full_size": "195/60 R14 86H TL",
                     "load_index": "86",
                     "speed_symbol": "H",
@@ -746,12 +803,24 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "price_set": 14400.00,
                     "promotion_price": None,
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
+                },
+                {
+                    "tire_id": 52,
+                    "full_size": "195/70 R14 91H TL",
+                    "load_index": "91",
+                    "speed_symbol": "H",
+                    "ply_rating": None,
+                    "price_each": 3650.00,
+                    "price_set": 14600.00,
+                    "promotion_price": None,
+                    "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 }
             ]
         elif model_name.upper() == "ENERGY XM2+":
+            # ใช้ข้อมูลยางจากฐานข้อมูลที่ใช้ model_id = 2
             sample_tires = [
                 {
-                    "tire_id": 9996,
+                    "tire_id": 53,
                     "full_size": "175/65 R15 84H TL",
                     "load_index": "84",
                     "speed_symbol": "H",
@@ -762,7 +831,7 @@ def create_sample_tires_for_model(model_name, brand_name, tire_category):
                     "tire_image_url": "Michelin_ENERGY_XM2_+_EXM2+.png"
                 },
                 {
-                    "tire_id": 9997,
+                    "tire_id": 54,
                     "full_size": "185/60 R15 84H TL",
                     "load_index": "84",
                     "speed_symbol": "H",
@@ -1527,11 +1596,17 @@ def handle_message(event):
             
             # ดึงข้อมูลยางทั้งหมดของรุ่นนี้
             model_id = model.get("model_id")
+            model_name = model.get("model_name", "")
             tires = get_tires_by_model_id(model_id)
             
-            print(f"Debug - Found {len(tires)} tires for model {model.get('model_name', '')}")
+            print(f"Debug - Found {len(tires)} tires for model {model_name}")
             
-            # ถ้าไม่มีข้อมูลยาง ให้สร้างข้อมูลยางตัวอย่าง
+            # ถ้าไม่มีข้อมูลยาง ให้ลองดึงข้อมูลยางจากฐานข้อมูลโดยใช้ชื่อรุ่น
+            if not tires:
+                tires = get_tires_by_model_name(model_name)
+                print(f"Debug - Found {len(tires)} tires by model name for {model_name}")
+            
+            # ถ้ายังไม่มีข้อมูลยาง ให้สร้างข้อมูลยางตัวอย่าง
             if not tires:
                 brand_name = model.get("brand_name", "")
                 model_name = model.get("model_name", "")

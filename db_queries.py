@@ -74,6 +74,48 @@ def get_tires_by_model_id(model_id):
         return []
     finally: conn.close()
 
+
+def get_tires_by_model_name(model_name):
+    """ดึงข้อมูลยางทั้งหมดของรุ่นที่ระบุโดยใช้ชื่อรุ่น"""
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute("""
+            SELECT t.tire_id, t.model_id, t.full_size, t.load_index, t.speed_symbol, t.ply_rating, 
+                   t.price_each, t.price_set, t.promotion_price, t.tire_image_url
+            FROM tires t
+            LEFT JOIN tire_models tm ON t.model_id = tm.model_id
+            WHERE tm.model_name = %s
+        """, (model_name,))
+        result = cur.fetchall()
+        
+        # ถ้าไม่พบข้อมูล ให้ลองค้นหาด้วยชื่อรุ่นที่คล้ายกัน
+        if not result and model_name.upper() == "EXM2+":
+            # สำหรับ EXM2+ ให้ดึงข้อมูลยางที่ใช้ model_id = 1
+            cur.execute("""
+                SELECT tire_id, model_id, full_size, load_index, speed_symbol, ply_rating, 
+                       price_each, price_set, promotion_price, tire_image_url
+                FROM tires
+                WHERE model_id = 1
+            """)
+            result = cur.fetchall()
+        elif not result and model_name.upper() == "ENERGY XM2+":
+            # สำหรับ ENERGY XM2+ ให้ดึงข้อมูลยางที่ใช้ model_id = 2
+            cur.execute("""
+                SELECT tire_id, model_id, full_size, load_index, speed_symbol, ply_rating, 
+                       price_each, price_set, promotion_price, tire_image_url
+                FROM tires
+                WHERE model_id = 2
+            """)
+            result = cur.fetchall()
+        
+        return result
+    except mysql.connector.Error as err:
+        print(f"Error getting tires by model name: {err}")
+        return []
+    finally: conn.close()
+
 # --- ฟังก์ชันสำหรับจัดการโปรโมชั่นและบริการ (ส่วนที่แก้ไข) ---
 def get_active_promotions():
     """ดึงโปรโมชั่นที่ใช้งานอยู่ทั้งหมด"""
