@@ -110,7 +110,8 @@ def file_exists(filename):
 
 
 def get_image_url(filename):
-    base_url = os.environ.get("BASE_URL", "").rstrip("/")
+    # ใช้ BASE_URL ที่กำหนดไว้ในไฟล์
+    base_url = BASE_URL
 
     # ถ้าเป็น URL จริง ให้ใช้เลย
     if filename and (str(filename).startswith("http://") or str(filename).startswith("https://")):
@@ -122,6 +123,7 @@ def get_image_url(filename):
         norm = "default-tire.jpg"
 
     # สร้าง URL โดยไม่ตรวจสอบไฟล์ (เพราะใน production ไม่สามารถเข้าถึงไฟล์ได้)
+    from urllib.parse import quote
     if base_url:
         url = f"{base_url}/static/uploads/tires/{quote(norm)}"
     else:
@@ -1127,6 +1129,32 @@ def handle_message(event):
         debug_all_models._called = True
 
     try:
+        # จัดการ pagination ก่อน
+        if text.startswith("page_"):
+            set_user_mode(user_id, "menu")
+            try:
+                page_num = int(text.split("_")[1])
+                print(f"Debug - Page navigation: user_id={user_id}, page={page_num}")
+                print(f"Debug - user_pages: {user_pages}")
+                
+                if user_id in user_pages and "model_id" in user_pages[user_id]:
+                    user_pages[user_id]["page"] = page_num
+                    print(f"Debug - Updated page to {page_num} for user {user_id}")
+                    send_tires_page(reply_token, user_id)
+                else:
+                    print(f"Debug - User {user_id} not found in user_pages or missing model_id")
+                    line_bot_api.reply_message(
+                        reply_token,
+                        TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ"),
+                    )
+            except Exception as e:
+                print(f"Debug - Error in page navigation: {e}")
+                line_bot_api.reply_message(
+                    reply_token,
+                    TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"),
+                )
+            return
+        
         # จัดการ Quick Reply เกี่ยวกับยาง (ไม่เรียก Make)
         if text in ["แนะนำ", "ยี่ห้อยางรถยนต์", "รุ่น", "บริการ", "โปรโมชัน", "ร้านอยู่ไหน", "ติดต่อร้าน"]:
             # เปลี่ยน mode เป็น menu เมื่อกด Quick Reply
@@ -1879,29 +1907,6 @@ def handle_message(event):
                     TextSendMessage(text=f"ไม่พบรุ่นของยี่ห้อ {brand_name} ในระบบ"),
                 )
 
-        elif text.startswith("page_"):
-            set_user_mode(user_id, "menu")
-            try:
-                page_num = int(text.split("_")[1])
-                print(f"Debug - Page navigation: user_id={user_id}, page={page_num}")
-                print(f"Debug - user_pages: {user_pages}")
-                
-                if user_id in user_pages and "model_id" in user_pages[user_id]:
-                    user_pages[user_id]["page"] = page_num
-                    print(f"Debug - Updated page to {page_num} for user {user_id}")
-                    send_tires_page(reply_token, user_id)
-                else:
-                    print(f"Debug - User {user_id} not found in user_pages or missing model_id")
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(text="กรุณาเลือกยี่ห้อและรุ่นก่อนค่ะ"),
-                    )
-            except Exception as e:
-                print(f"Debug - Error in page navigation: {e}")
-                line_bot_api.reply_message(
-                    reply_token,
-                    TextSendMessage(text=f"เกิดข้อผิดพลาด: {str(e)}"),
-                )
 
         elif any(
             w in text
