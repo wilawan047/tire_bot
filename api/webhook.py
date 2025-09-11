@@ -126,6 +126,11 @@ def get_image_url(filename):
     if not norm:
         norm = "default-tire.jpg"
 
+    # แก้ไขชื่อไฟล์ที่ไม่มีเครื่องหมาย + ให้ตรงกับไฟล์จริง
+    if "Michelin_ENERGY_XM2__EXM2.png" in norm:
+        norm = "Michelin_ENERGY_XM2_+_EXM2+.png"
+        print(f"Debug - Fixed filename: {filename} -> {norm}")
+
     # สร้าง URL โดยไม่ตรวจสอบไฟล์ (เพราะใน production ไม่สามารถเข้าถึงไฟล์ได้)
     from urllib.parse import quote
     if base_url:
