@@ -655,7 +655,11 @@ def build_service_list_flex(category_name, services):
 def get_tire_model_name_by_id(model_id):
     """ดึงชื่อรุ่นยางตาม model_id"""
     from db_queries import get_tire_model_name_by_id as db_get_tire_model_name_by_id
-    return db_get_tire_model_name_by_id(model_id)
+    result = db_get_tire_model_name_by_id(model_id)
+    if result:
+        return result
+    else:
+        return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
 
 
 def create_sample_tires_for_model(model_name, brand_name, tire_category):
@@ -981,12 +985,16 @@ def send_tires_page(reply_token, user_id):
 
     tire_model = get_tire_model_name_by_id(model_id)
     model_name = tire_model.get("model_name", "Unknown Model")
+    
+    print(f"Debug - send_tires_page: tire_model={tire_model}")
+    print(f"Debug - send_tires_page: model_name={model_name}")
 
     bubbles = []
     for t in tires_page:
         # เพิ่มข้อมูลยี่ห้อและรุ่นใน tire object
         t['brand_name'] = tire_model.get("brand_name", "")
         t['model_name'] = tire_model.get("model_name", "")
+        print(f"Debug - send_tires_page: tire object after adding model_name: {t}")
         tire_flex = build_tire_flex(t)
         bubbles.append(tire_flex)
     carousel = {"type": "carousel", "contents": bubbles}
