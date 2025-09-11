@@ -102,6 +102,7 @@ def get_all_service_categories():
     finally: conn.close()
 def get_services_by_category(category_name):
     """ดึงบริการทั้งหมดในหมวดหมู่ที่ระบุ."""
+    print(f"Debug - get_services_by_category called with: '{category_name}'")
     conn = get_db_connection()
     if not conn: return []
     try:
@@ -115,7 +116,9 @@ def get_services_by_category(category_name):
             GROUP BY s.service_id, s.category, s.service_name
             ORDER BY s.service_id
         """, (category_name,))
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        print(f"Debug - Found {len(result)} services for category '{category_name}'")
+        return result
     except mysql.connector.Error as err:
         print(f"Error getting services by category: {err}")
         return []

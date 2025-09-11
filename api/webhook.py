@@ -950,6 +950,7 @@ def handle_message(event):
 
     # Debug: แสดงข้อความที่ได้รับ
     print(f"Received text: '{text}' from user: {user_id}")
+    print(f"Text type: {type(text)}, Length: {len(text)}")
     
     # ตรวจสอบ reply_token
     if not reply_token:
@@ -1366,6 +1367,20 @@ def handle_message(event):
                     TextSendMessage(text="ไม่พบข้อมูลรุ่นยางในระบบ"),
                 )
 
+        # ตรวจสอบการเลือกหมวดหมู่บริการ (ย้ายขึ้นมาก่อนการค้นหายาง)
+        elif (category := get_services_by_category(text)):
+            print(f"Debug - Found service category: '{text}' with {len(category)} services")
+            print(f"Debug - Services: {[s['service_name'] for s in category]}")
+            set_user_mode(user_id, "menu")
+            flex_content = build_service_list_flex(text, category)
+            flex_msg = FlexSendMessage(alt_text=f"บริการหมวด {text}", contents=flex_content)
+            quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
+            quick_reply_msg = TextSendMessage(
+                text="เลือกบริการเพิ่มเติมหรือกลับไปเมนูหลัก",
+                quick_reply=build_quick_reply_with_extra(quick_buttons),
+            )
+            line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
+
         elif (brand := find_brand_in_text(text)):
             set_user_mode(user_id, "menu")
             models = get_tire_models_by_brand_id(brand["brand_id"])
@@ -1772,18 +1787,6 @@ def handle_message(event):
                     TextSendMessage(text="ขออภัยค่ะ ขณะนี้ยังไม่พบบริการในระบบ"),
                 )
 
-        # ตรวจสอบการเลือกหมวดหมู่บริการ (ย้ายขึ้นมาก่อนส่วนอื่น)
-        elif (category := get_services_by_category(text)):
-            print(f"Debug - Found service category: '{text}' with {len(category)} services")
-            set_user_mode(user_id, "menu")
-            flex_content = build_service_list_flex(text, category)
-            flex_msg = FlexSendMessage(alt_text=f"บริการหมวด {text}", contents=flex_content)
-            quick_buttons = [("🏠 เมนูหลัก", "แนะนำ")]
-            quick_reply_msg = TextSendMessage(
-                text="เลือกบริการเพิ่มเติมหรือกลับไปเมนูหลัก",
-                quick_reply=build_quick_reply_with_extra(quick_buttons),
-            )
-            line_bot_api.reply_message(reply_token, [flex_msg, quick_reply_msg])
 
         else:
             # Fallback: not matched any quick-reply flow → ask Make
