@@ -45,7 +45,12 @@ def get_tire_model_by_name(model_name):
     if not conn: return None
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT model_id, model_name FROM tire_models WHERE LOWER(model_name) = LOWER(%s)", (model_name,))
+        cur.execute("""
+            SELECT tm.model_id, tm.model_name, tm.tire_category, b.brand_name
+            FROM tire_models tm
+            LEFT JOIN brands b ON tm.brand_id = b.brand_id
+            WHERE LOWER(tm.model_name) = LOWER(%s)
+        """, (model_name,))
         return cur.fetchone()
     except mysql.connector.Error as err:
         print(f"Error getting tire model by name: {err}")

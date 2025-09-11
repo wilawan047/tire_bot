@@ -728,7 +728,7 @@ def get_tire_model_name_by_id(model_id):
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             """
-            SELECT tm.model_name, b.brand_name
+            SELECT tm.model_id, tm.model_name, tm.tire_category, b.brand_name
             FROM tire_models tm
             LEFT JOIN brands b ON tm.brand_id = b.brand_id
             WHERE tm.model_id = %s
@@ -740,10 +740,10 @@ def get_tire_model_name_by_id(model_id):
         if result:
             return result
         else:
-            return {"model_name": "Unknown Model", "brand_name": "Unknown Brand"}
+            return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
     except Exception as e:
         print(f"Error in get_tire_model_name_by_id: {e}")
-        return {"model_name": "Unknown Model", "brand_name": "Unknown Brand"}
+        return {"model_id": model_id, "model_name": "Unknown Model", "brand_name": "Unknown Brand", "tire_category": "ไม่ระบุ"}
 
 
 
@@ -889,6 +889,8 @@ def find_model_in_text(text):
                 text_lower.replace('+', '').replace(' ', '') in model_name_lower.replace('+', '').replace(' ', '') or
                 model_name_lower.replace('+', '').replace(' ', '') in text_lower.replace('+', '').replace(' ', '')):
                 print(f"Debug - Found match: '{m['model_name']}'")
+                # เพิ่มข้อมูลยี่ห้อ
+                m['brand_name'] = b['brand_name']
                 return m
     print(f"Debug - No model match found for: '{text}'")
     return None
@@ -915,6 +917,8 @@ def find_model_by_alias(text):
                 text_upper.replace('+', '') in model_name_upper.replace('+', '') or
                 model_name_upper.replace('+', '') in text_upper.replace('+', '')):
                 print(f"Debug - Found alias match: '{m['model_name']}'")
+                # เพิ่มข้อมูลยี่ห้อ
+                m['brand_name'] = b['brand_name']
                 return m
     
     return None
@@ -1421,9 +1425,72 @@ def handle_message(event):
             print(f"Debug - Found {len(tires)} tires for model {model.get('model_name', '')}")
             
             if not tires:
+                # ถ้าไม่มีข้อมูลยาง ให้แสดงข้อมูลรุ่นยางแบบง่าย
+                brand_name = model.get("brand_name", "")
+                model_name = model.get("model_name", "")
+                tire_category = model.get("tire_category", "ไม่ระบุ")
+                
+                # สร้าง Flex Message แสดงข้อมูลรุ่นยาง
+                bubble = {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": f"{brand_name} {model_name}",
+                                "weight": "bold",
+                                "size": "xl",
+                                "wrap": True,
+                                "color": "#0B4F6C",
+                            },
+                            {"type": "separator", "margin": "md"},
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "margin": "md",
+                                "spacing": "sm",
+                                "contents": [
+                                    {"type": "text", "text": f"หมวด: {tire_category}"},
+                                    {"type": "text", "text": "ไม่พบข้อมูลยางในระบบ", "color": "#FF6B6B"},
+                                    {"type": "text", "text": "กรุณาติดต่อร้านเพื่อสอบถามข้อมูลเพิ่มเติม", "size": "sm", "color": "#666666"},
+                                ],
+                            },
+                        ],
+                    },
+                    "footer": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "style": "link",
+                                "height": "sm",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "📞 ติดต่อร้าน",
+                                    "uri": "tel:044611097"
+                                }
+                            }
+                        ]
+                    }
+                }
+                
                 line_bot_api.reply_message(
                     reply_token,
-                    TextSendMessage(text=f"ไม่พบข้อมูลยางของรุ่น {model.get('model_name', '')} ในระบบ")
+                    [
+                        FlexSendMessage(alt_text=f"ข้อมูลรุ่น {model_name}", contents=bubble),
+                        TextSendMessage(
+                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                            quick_reply=build_quick_reply([
+                                ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                                ("🏠 เมนูหลัก", "แนะนำ"),
+                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                            ])
+                        )
+                    ]
                 )
                 return
             
