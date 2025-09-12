@@ -2080,14 +2080,14 @@ def handle_message(event):
 @handler.add(PostbackEvent)
 def handle_postback(event):
     """จัดการ Postback events เช่น การกดปุ่มใน Flex Message"""
-    reply_token = event.postback.data
+    postback_data = event.postback.data
     user_id = event.source.user_id
     
-    print(f"Postback received: {reply_token}")
+    print(f"Postback received: {postback_data}")
     
     # ตรวจสอบว่าเป็นคำถามตัวอย่างหรือไม่
-    if reply_token.startswith("ask_question="):
-        question = reply_token.replace("ask_question=", "")
+    if postback_data.startswith("ask_question="):
+        question = postback_data.replace("ask_question=", "")
         print(f"User selected example question: {question}")
         
         # เปลี่ยน mode เป็น free_text และส่งคำถามไปยัง Make
@@ -2096,7 +2096,7 @@ def handle_postback(event):
         # ส่งคำถามไปยัง Make integration
         try:
             make_answer = forward_to_make({
-                "replyToken": reply_token,
+                "replyToken": event.reply_token,
                 "userId": user_id,
                 "text": question,
             })
@@ -2123,6 +2123,55 @@ def handle_postback(event):
                 )
         except Exception as e:
             print(f"Error calling Make integration: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
+            )
+    
+    # ตรวจสอบว่าเป็นปุ่มดูรายละเอียดรุ่นยางหรือไม่
+    elif postback_data.startswith("model="):
+        model_name = postback_data.replace("model=", "")
+        print(f"User selected tire model: {model_name}")
+        
+        try:
+            # ค้นหาข้อมูลยางจากฐานข้อมูล
+            tire_list = get_tires_by_model_name(model_name)
+            
+            if tire_list and len(tire_list) > 0:
+                # ใช้ยางตัวแรกใน list และเพิ่มข้อมูลรุ่นยาง
+                tire_data = tire_list[0]
+                
+                # เพิ่มข้อมูลรุ่นยางและยี่ห้อ
+                model_info = get_tire_model_by_name(model_name)
+                if model_info:
+                    tire_data['model_name'] = model_info.get('model_name', model_name)
+                    tire_data['brand_name'] = model_info.get('brand_name', '')
+                    tire_data['tire_category'] = model_info.get('tire_category', '')
+                
+                # สร้าง Flex Message สำหรับแสดงรายละเอียดยาง
+                flex_message = build_tire_flex(tire_data)
+                
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [
+                        FlexSendMessage(alt_text=f"รายละเอียดยาง {model_name}", contents=flex_message),
+                        TextSendMessage(
+                            text="คลิกที่เมนูด้านล่างเพื่อดูเมนูอื่นเพิ่มเติม",
+                            quick_reply=build_quick_reply([
+                                ("⬅️ กลับไปเลือกยี่ห้อ", "ยี่ห้อยางรถยนต์"),
+                                ("🏠 เมนูหลัก", "แนะนำ"),
+                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
+                            ])
+                        )
+                    ]
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f"ขออภัยค่ะ ไม่พบข้อมูลยางรุ่น {model_name}")
+                )
+        except Exception as e:
+            print(f"Error getting tire data: {e}")
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
