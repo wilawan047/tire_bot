@@ -67,17 +67,21 @@ def set_user_mode(user_id, mode):
 def callback():
     body = request.get_data(as_text=True)
     signature = request.headers.get("X-Line-Signature")
+    print("🔗 WEBHOOK REQUEST RECEIVED!")
     print("Signature:", signature)
+    print("Body length:", len(body))
+    print("Body preview:", body[:200] + "..." if len(body) > 200 else body)
 
     if not signature:
         return "Missing signature", 400
     try:
         handler.handle(body, signature)
+        print("✅ Handler processed successfully")
     except InvalidSignatureError:
         print("❌ Invalid signature")
         return "Invalid signature", 401
     except Exception as e:
-        print("Error:", e)
+        print("❌ Handler error:", e)
         return "Error", 500
     return "OK", 200
 
@@ -1124,8 +1128,11 @@ def handle_message(event):
     mode = user_pages.get(user_id, {}).get("mode", "menu")
 
     # Debug: แสดงข้อความที่ได้รับ
+    print(f"📝 MESSAGE EVENT RECEIVED!")
     print(f"Received text: '{text}' from user: {user_id}")
     print(f"Text type: {type(text)}, Length: {len(text)}")
+    print(f"Event type: {type(event)}")
+    print(f"Reply token: {reply_token}")
     
     # ตรวจสอบ reply_token
     if not reply_token:
@@ -2083,7 +2090,11 @@ def handle_postback(event):
     postback_data = event.postback.data
     user_id = event.source.user_id
     
-    print(f"Postback received: {postback_data}")
+    print(f"🔔 POSTBACK EVENT RECEIVED!")
+    print(f"Postback data: {postback_data}")
+    print(f"User ID: {user_id}")
+    print(f"Event type: {type(event)}")
+    print(f"Reply token: {event.reply_token}")
     
     # ตรวจสอบว่าเป็นคำถามตัวอย่างหรือไม่
     if postback_data.startswith("ask_question="):
