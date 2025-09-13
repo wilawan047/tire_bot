@@ -2046,27 +2046,9 @@ def handle_message(event):
 
 
         else:
-            # Fallback: not matched any quick-reply flow → ask Make
-            try:
-                make_answer = forward_to_make({
-                    "replyToken": reply_token,
-                    "userId": user_id,
-                    "text": text,
-                })
-                if make_answer:
-                    try:
-                        line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
-                    except Exception as reply_err:
-                        print(f"❌ Failed to send reply: {reply_err}")
-                # If Make has no answer → remain silent (no reply)
-            except Exception as make_err:
-                print("❌ Make error:", make_err)
-                # ส่งข้อความแจ้งเตือนเมื่อ Make ไม่ทำงาน
-                try:
-                    fallback_msg = "ขออภัยค่ะ ระบบตอบคำถามไม่พร้อมใช้งานในขณะนี้ กรุณาติดต่อร้านโดยตรงที่ ☎️ 044 611 097"
-                    line_bot_api.reply_message(reply_token, TextSendMessage(text=fallback_msg))
-                except Exception as fallback_err:
-                    print(f"❌ Failed to send fallback message: {fallback_err}")
+            # Fallback: not matched any quick-reply flow → remain silent
+            print(f"Debug - No match found for text: '{text}', remaining silent")
+            # ไม่ส่งไปยัง Make เพื่อป้องกันการตอบข้อความที่ไม่ต้องการ
 
     except Exception as e:
         print("❌ ERROR:", e)
