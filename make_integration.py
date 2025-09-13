@@ -24,12 +24,9 @@ def forward_to_make(data):
         
         # ตรวจสอบว่า Make ตอบ "Accepted" หรือไม่
         if response.text.strip() == "Accepted":
-            print("⚠️ Make returned 'Accepted', providing fallback response")
-            fallback_message = (
-                "ขออภัยค่ะ ระบบตอบคำถามกำลังประมวลผลคำถามของคุณ\n"
-                "กรุณารอสักครู่ หรือติดต่อร้านโดยตรงที่ ☎️ 044 611 097"
-            )
-            return fallback_message
+            print("⚠️ Make returned 'Accepted', waiting for actual response")
+            # ไม่ตอบอะไร ให้รอคำตอบจริงจาก Make
+            return None
 
         try:
             resp_json = response.json()
