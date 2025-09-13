@@ -1139,15 +1139,6 @@ def handle_message(event):
         print("❌ No reply token available")
         return
     
-    # ตรวจสอบว่า reply_token ยังใช้ได้หรือไม่ (ไม่ซ้ำกับที่ใช้ไปแล้ว)
-    if hasattr(handle_message, 'used_tokens'):
-        if reply_token in handle_message.used_tokens:
-            print("❌ Reply token already used")
-            return
-        handle_message.used_tokens.add(reply_token)
-    else:
-        handle_message.used_tokens = {reply_token}
-    
     # Debug: แสดงรุ่นยางทั้งหมดในฐานข้อมูล (เฉพาะครั้งแรก)
     if not hasattr(debug_all_models, '_called'):
         debug_all_models()
@@ -1267,7 +1258,7 @@ def handle_message(event):
                         text="📝 หรือพิมพ์คำถามของคุณเองได้เลยค่ะ",
                         quick_reply=build_quick_reply([
                             ("🏠 เมนูหลัก", "แนะนำ"),
-                            ("🔙 กลับ", "แนะนำ")
+                            ("↩️ กลับ", "แนะนำ")
                         ])
                     )
                 ]
