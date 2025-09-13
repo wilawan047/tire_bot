@@ -3,7 +3,7 @@ import requests
 def forward_to_make(data):
     user_message = str(data.get("text", "")).strip() or "❗ ไม่มีข้อความจากผู้ใช้"
 
-    url = "https://hook.eu2.make.com/p5vur0klgafscgd1mq7i8ghiwjm57wn5"
+    url = "https://hook.eu2.make.com/7qkudqz0kbrzhfgv6gc27qidw2xvz63p"
     payload = {
         "user_id": data.get("userId", "unknown"),
         "message": user_message
