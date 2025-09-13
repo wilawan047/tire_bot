@@ -9,7 +9,7 @@ def forward_to_chatpdf(data):
         return "❌ ไม่มีข้อความส่งไป ChatPDF"
 
     source_id = "src_cjw53q0gcxYlE668P0ZxZ"
-    api_key = "sec_nNEwD1000ioLIYb0HiD7RdUngncuzNut"
+    api_key = "sec_awHqhVhMOa8NMeEgPp0Go"
 
     headers = {"x-api-key": api_key, "Content-Type": "application/json"}
     payload = {"sourceId": source_id, "messages": [{"role": "user", "content": user_message}]}
