@@ -16,12 +16,36 @@ def forward_to_chatpdf(data):
 
     try:
         response = requests.post("https://api.chatpdf.com/v1/chats/message", headers=headers, json=payload, timeout=10)
+        print(f"🔹 ChatPDF response status: {response.status_code}")
+        print(f"🔹 ChatPDF response text: {response.text}")
+        
         if response.status_code == 200:
-            resp_json = response.json()
-            print("🔹 ChatPDF response:", resp_json)  # debug log
-            return resp_json.get("content", "ไม่พบคำตอบจากเอกสารค่ะ")
+            try:
+                resp_json = response.json()
+                print("🔹 ChatPDF response JSON:", resp_json)  # debug log
+                
+                # ตรวจสอบว่า response มี data หรือไม่
+                if isinstance(resp_json, dict):
+                    content = resp_json.get("content")
+                    if content:
+                        return content
+                    else:
+                        return "ไม่พบคำตอบจากเอกสารค่ะ"
+                else:
+                    return "รูปแบบข้อมูลตอบกลับไม่ถูกต้องค่ะ"
+            except ValueError as json_err:
+                print(f"❌ JSON decode error: {json_err}")
+                return "ไม่สามารถประมวลผลข้อมูลตอบกลับได้ค่ะ"
         else:
-            return f"❌ Error {response.status_code} จาก ChatPDF: {response.text}"
-    except Exception as e:
-        print("❌ Exception ส่ง ChatPDF:", e)
+            error_msg = f"❌ Error {response.status_code} จาก ChatPDF"
+            try:
+                error_detail = response.json().get("message", response.text)
+                return f"{error_msg}: {error_detail}"
+            except:
+                return f"{error_msg}: {response.text}"
+    except requests.RequestException as e:
+        print(f"❌ Request exception ส่ง ChatPDF: {e}")
         return f"❌ ไม่สามารถเชื่อมต่อ ChatPDF ได้: {e}"
+    except Exception as e:
+        print(f"❌ General exception ส่ง ChatPDF: {e}")
+        return f"❌ เกิดข้อผิดพลาด: {e}"
