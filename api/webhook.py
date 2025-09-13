@@ -1264,7 +1264,7 @@ def handle_message(event):
                 [
                     TextSendMessage(text=example_text),
                     TextSendMessage(
-                        text="💡 หากต้องการออกจากโหมดถามเพิ่มเติม ให้พิมพ์ 'แนะนำ' หรือส่งสติ๊กเกอร์ได้เลยค่ะ",
+                        text="📝 หรือพิมพ์คำถามของคุณเองได้เลยค่ะ",
                         quick_reply=build_quick_reply([
                             ("🏠 เมนูหลัก", "แนะนำ"),
                             ("🔙 กลับ", "แนะนำ")
