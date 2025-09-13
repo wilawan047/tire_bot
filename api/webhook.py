@@ -1139,6 +1139,15 @@ def handle_message(event):
         print("❌ No reply token available")
         return
     
+    # ตรวจสอบว่า reply_token ยังใช้ได้หรือไม่ (ไม่ซ้ำกับที่ใช้ไปแล้ว)
+    if hasattr(handle_message, 'used_tokens'):
+        if reply_token in handle_message.used_tokens:
+            print("❌ Reply token already used")
+            return
+        handle_message.used_tokens.add(reply_token)
+    else:
+        handle_message.used_tokens = {reply_token}
+    
     # Debug: แสดงรุ่นยางทั้งหมดในฐานข้อมูล (เฉพาะครั้งแรก)
     if not hasattr(debug_all_models, '_called'):
         debug_all_models()
@@ -1239,45 +1248,27 @@ def handle_message(event):
             example_questions = [
                 "ยางแบบไหนเหมาะกับรถกระบะ?",
                 "ยางแบบไหนเหมาะกับรถเก๋ง?",
-                "ยางแบบไหนเหมาะกับขับเร็ว?"
+                "ยางแบบไหนเหมาะกับขับเร็ว?",
+                "ยางแบบไหนประหยัดน้ำมัน?",
+                "ยางแบบไหนเหมาะกับถนนเปียก?",
+                "ยางแบบไหนเหมาะกับถนนแห้ง?",
+                "ยางแบบไหนเหมาะกับรถ SUV?",
+                "ยางแบบไหนเหมาะกับรถกระบะ?"
             ]
             
-            # สร้าง Flex Message แสดงตัวอย่างคำถาม
-            bubbles = []
-            for i, question in enumerate(example_questions[:8]):  # แสดง 8 คำถาม
-                bubble = {
-                    "type": "bubble",
-                    "body": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": f"💡 {question}",
-                                "wrap": True,
-                                "size": "sm",
-                                "color": "#666666"
-                            }
-                        ],
-                        "paddingAll": "12px"
-                    },
-                    "action": {
-                        "type": "postback",
-                        "label": "ถามคำถามนี้",
-                        "data": f"ask_question={question}"
-                    }
-                }
-                bubbles.append(bubble)
+            # สร้างข้อความตัวอย่างคำถาม
+            example_text = "💬 คุณสามารถถามคำถามเกี่ยวกับยางได้เลยค่ะ! ตัวอย่างคำถามที่ถามได้บ่อย:\n\n"
+            for i, question in enumerate(example_questions, 1):
+                example_text += f"{i}. {question}\n"
             
-            carousel = {"type": "carousel", "contents": bubbles}
+            example_text += "\n📝 หรือพิมพ์คำถามของคุณเองได้เลยค่ะ"
             
             line_bot_api.reply_message(
                 reply_token,
                 [
-                    TextSendMessage(text="💬 คุณสามารถถามคำถามเกี่ยวกับยางได้เลยค่ะ! ตัวอย่างคำถามที่ถามได้บ่อย:"),
-                    FlexSendMessage(alt_text="ตัวอย่างคำถาม", contents=carousel),
+                    TextSendMessage(text=example_text),
                     TextSendMessage(
-                        text="📝 หรือพิมพ์คำถามของคุณเองได้เลยค่ะ\n\n💡 หากต้องการออกจากโหมดถามเพิ่มเติม ให้พิมพ์ 'แนะนำ' ค่ะ",
+                        text="💡 หากต้องการออกจากโหมดถามเพิ่มเติม ให้พิมพ์ 'แนะนำ' หรือส่งสติ๊กเกอร์ได้เลยค่ะ",
                         quick_reply=build_quick_reply([
                             ("🏠 เมนูหลัก", "แนะนำ"),
                             ("🔙 กลับ", "แนะนำ")
@@ -1316,9 +1307,18 @@ def handle_message(event):
                         "text": text,
                     })
                     if make_answer:
-                        line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                        try:
+                            line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                        except Exception as reply_err:
+                            print(f"❌ Failed to send reply: {reply_err}")
                 except Exception as make_err:
                     print("❌ Make error:", make_err)
+                    # ส่งข้อความแจ้งเตือนเมื่อ Make ไม่ทำงาน
+                    try:
+                        fallback_msg = "ขออภัยค่ะ ระบบตอบคำถามไม่พร้อมใช้งานในขณะนี้ กรุณาติดต่อร้านโดยตรงที่ ☎️ 044 611 097"
+                        line_bot_api.reply_message(reply_token, TextSendMessage(text=fallback_msg))
+                    except Exception as fallback_err:
+                        print(f"❌ Failed to send fallback message: {fallback_err}")
                 return
             else:
                 # ถ้าพิมพ์คำสั่งนำทาง ให้เปลี่ยนกลับเป็นโหมดเมนู
@@ -1447,12 +1447,21 @@ def handle_message(event):
                     "text": text,
                 })
                 if make_answer:
-                    line_bot_api.reply_message(
-                        reply_token,
-                        TextSendMessage(text=make_answer)
-                    )
+                    try:
+                        line_bot_api.reply_message(
+                            reply_token,
+                            TextSendMessage(text=make_answer)
+                        )
+                    except Exception as reply_err:
+                        print(f"❌ Failed to send reply: {reply_err}")
             except Exception as make_err:
                 print("❌ Make error:", make_err)
+                # ส่งข้อความแจ้งเตือนเมื่อ Make ไม่ทำงาน
+                try:
+                    fallback_msg = "ขออภัยค่ะ ระบบตอบคำถามไม่พร้อมใช้งานในขณะนี้ กรุณาติดต่อร้านโดยตรงที่ ☎️ 044 611 097"
+                    line_bot_api.reply_message(reply_token, TextSendMessage(text=fallback_msg))
+                except Exception as fallback_err:
+                    print(f"❌ Failed to send fallback message: {fallback_err}")
             return
 
         elif any(kw in text.lower() for kw in ["แนะนำ", "แนะนำยาง", "แนะนำหน่อย"]):
@@ -2070,11 +2079,19 @@ def handle_message(event):
                     "text": text,
                 })
                 if make_answer:
-                    line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                    try:
+                        line_bot_api.reply_message(reply_token, TextSendMessage(text=make_answer))
+                    except Exception as reply_err:
+                        print(f"❌ Failed to send reply: {reply_err}")
                 # If Make has no answer → remain silent (no reply)
             except Exception as make_err:
                 print("❌ Make error:", make_err)
-                # Silent on error as well
+                # ส่งข้อความแจ้งเตือนเมื่อ Make ไม่ทำงาน
+                try:
+                    fallback_msg = "ขออภัยค่ะ ระบบตอบคำถามไม่พร้อมใช้งานในขณะนี้ กรุณาติดต่อร้านโดยตรงที่ ☎️ 044 611 097"
+                    line_bot_api.reply_message(reply_token, TextSendMessage(text=fallback_msg))
+                except Exception as fallback_err:
+                    print(f"❌ Failed to send fallback message: {fallback_err}")
 
     except Exception as e:
         print("❌ ERROR:", e)
@@ -2099,51 +2116,8 @@ def handle_postback(event):
     print(f"Event type: {type(event)}")
     print(f"Reply token: {event.reply_token}")
     
-    # ตรวจสอบว่าเป็นคำถามตัวอย่างหรือไม่
-    if postback_data.startswith("ask_question="):
-        question = postback_data.replace("ask_question=", "")
-        print(f"User selected example question: {question}")
-        
-        # เปลี่ยน mode เป็น free_text และส่งคำถามไปยัง Make
-        set_user_mode(user_id, "free_text")
-        
-        # ส่งคำถามไปยัง Make integration
-        try:
-            make_answer = forward_to_make({
-                "replyToken": event.reply_token,
-                "userId": user_id,
-                "text": question,
-            })
-            
-            if make_answer:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    [
-                        TextSendMessage(text=f"คำถาม: {question}"),
-                        TextSendMessage(text=make_answer),
-                        TextSendMessage(
-                            text="มีคำถามอื่นอีกไหมคะ? หรือพิมพ์ 'แนะนำ' เพื่อกลับไปเมนูหลัก",
-                            quick_reply=build_quick_reply([
-                                ("🏠 เมนูหลัก", "แนะนำ"),
-                                ("❓ ถามคำถามอื่น", "ถามเพิ่มเติม")
-                            ])
-                        )
-                    ]
-                )
-            else:
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="ขออภัยค่ะ ไม่สามารถตอบคำถามได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง")
-                )
-        except Exception as e:
-            print(f"Error calling Make integration: {e}")
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="ขออภัยค่ะ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
-            )
-    
     # ตรวจสอบว่าเป็นปุ่มดูรายละเอียดรุ่นยางหรือไม่
-    elif postback_data.startswith("model="):
+    if postback_data.startswith("model="):
         model_name = postback_data.replace("model=", "")
         print(f"User selected tire model: {model_name}")
         
